@@ -1,0 +1,80 @@
+---
+import { getEntry, getCollection } from 'astro:content';
+import { Icon } from "astro-icon/components";
+// import BlueCheck from "@/components/BlueCheck.astro";
+
+const siteSettings = await getEntry('siteSettings', 'main');
+const showCheck = siteSettings?.data?.showCheck;
+
+interface SocialLink {
+  id: string;
+  data: {
+    link: string;
+    icon: string;
+    order: number | undefined;
+    friendlyName?: string;
+    standaloneOnly?: boolean;
+  };
+}
+
+
+
+
+const socialLinks = (await getCollection('socialLinks'))
+  .sort((a, b) => {
+    if (typeof a.data.order === 'number' && typeof b.data.order === 'number') {
+      return a.data.order - b.data.order;
+    }
+    if (typeof a.data.order === 'number') return -1;
+    if (typeof b.data.order === 'number') return 1;
+    return a.id.localeCompare(b.id);
+  });
+
+---
+
+<!-- <style>
+  [data-standalone-only="true"] {
+    display: none !important;
+  }
+</style> -->
+
+
+  <ul class="flex flex-wrap items-center gap-2 pwa-persistent-nav " style="max-width:none; justify-content:center; ">
+    {socialLinks.map((link) => (
+      <li 
+        class="flex" 
+      >
+        <a
+          class="inline-block p-1 sm:hover:text-link"
+          href={link.data.link}
+          rel={`noopener noreferrer`}
+          target="_blank"
+          aria-label="Link to Social Site"
+        >
+          <Icon aria-hidden="true" class="h-7 w-7" focusable="false" name={link.data.icon} />
+          <span class="sr-only">{link.id}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+
+
+<!-- <script>
+  function updateVisibility() {
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                  document.referrer.includes('android-app://');
+    
+    console.log('PWA Status:', isPWA);x
+                  
+    document.querySelectorAll('[data-standalone-only="true"]').forEach((el) => {
+      if (el instanceof HTMLElement) {
+        el.style.display = isPWA ? 'flex' : 'none';
+        el.style.visibility = isPWA ? 'visible' : 'hidden';
+      }
+    });
+  }
+  
+  updateVisibility();
+  window.addEventListener('load', updateVisibility);
+  document.addEventListener('astro:page-load', updateVisibility);
+</script> -->

@@ -1,0 +1,115 @@
+---
+import type { SiteMeta } from "@/types";
+import { siteConfig } from "@/site-config";
+import { getEntry } from 'astro:content';
+import "../styles/global.css";
+
+type Props = SiteMeta;
+
+// Add default values and error handling
+let siteFont = 'system-ui';
+let showRobots = true;
+let themeColor = '#000000';
+
+try {
+  const siteSettings = await getEntry('siteSettings', 'main');
+  const pwaSettings = await getEntry('pwaSettings', 'index');
+  const styleapps = await getEntry('styleapps', 'index');
+
+  if (styleapps?.data) {
+    siteFont = styleapps.data.siteFont || siteFont;
+  }
+
+  if (pwaSettings?.data) {
+    showRobots = pwaSettings.data.showRobots ?? showRobots;
+    themeColor = pwaSettings.data.themeColor ?? themeColor;
+  }
+} catch (error) {
+  console.error('Error loading content entries:', error);
+}
+
+const { articleDate, description, ogImage, title } = Astro.props;
+
+const titleSeparator = "•";
+const siteTitle = `${description} ${titleSeparator} ${siteConfig.title}`;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://example.com');
+const socialImageURL = ogImage ? new URL(ogImage, Astro.site).href : new URL("/socialCard.webp", Astro.site).href;
+---
+
+<meta name="language" content={siteConfig.language || "en"} />
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+<meta content="IE=edge" http-equiv="X-UA-Compatible" />
+<title>{title}</title>
+
+{/* Icons / Favicon */}
+<link href={siteConfig.logoImage} rel="icon" type="image/svg+xml" />
+<link href="/manifest.webmanifest" rel="manifest" />
+<link href={canonicalURL.toString()} rel="canonical" />
+
+{/* Primary Meta Tags */}
+<meta content={title} name="title" />
+<meta content={description} name="description" />
+<meta content={siteConfig.author} name="author" />
+
+{showRobots ? (
+  <meta name="robots" content="index, follow" />
+) : (
+  <meta name="robots" content="noindex, nofollow" />
+)}
+
+{/* Theme Colour */}
+<meta content={themeColor} name="theme-color" />
+
+{/* Open Graph / Facebook */}
+<meta content={articleDate ? "article" : "website"} property="og:type" />
+<meta content={title} property="og:title" />
+<meta content={description} property="og:description" />
+<meta content={canonicalURL} property="og:url" />
+<meta content={siteConfig.title} property="og:site_name" />
+<meta content={siteConfig.ogLocale} property="og:locale" />
+<meta content={socialImageURL} property="og:image" />
+<meta content="1200" property="og:image:width" />
+<meta content="630" property="og:image:height" />
+{
+  articleDate && (
+    <>
+      <meta content={siteConfig.author} property="article:author" />
+      <meta content={articleDate} property="article:published_time" />
+    </>
+  )
+}
+
+{/* Twitter */}
+<meta content="summary_large_image" property="twitter:card" />
+<meta content={canonicalURL} property="twitter:url" />
+<meta content={title} property="twitter:title" />
+<meta content={description} property="twitter:description" />
+<meta content={socialImageURL} property="twitter:image" />
+<meta content={canonicalURL.toString()} property="twitter:url" />
+
+{/* Sitemap */}
+<link href="/sitemap-index.xml" rel="sitemap" />
+
+{/* RSS auto-discovery */}
+<link href="/rss.xml" rel="alternate" title={siteConfig.title} type="application/rss+xml" />
+
+
+{/* Google Fonts */}
+<link rel="preconnect" href="https://fonts.googleapis.com" cross-origin="anonymous" />
+<link rel="preconnect" href="https://fonts.gstatic.com" cross-origin="anonymous" />
+
+<link
+  href={`https://fonts.googleapis.com/css2?family=${siteFont}&display=swap`}
+  rel="stylesheet"
+  cross-origin="anonymous"
+  referrer-policy="no-referrer"
+/>
+<style set:html={`
+  #menu,.menu,.font,.full-width-image:after,.h1,.h2,.h3,.h4,.header .menu-icon:before,.slider:before,.intro:after,.intro:before,.scrolldown,h1,h2,h3,h4,input.special{font-family: ${siteFont}, sans-serif;}
+`}>
+</style>
+<meta content={Astro.generator} name="generator" />
+<meta content={canonicalURL.toString()} property="og:url" />
+<meta name="mobile-web-app-capable" content="yes">
+

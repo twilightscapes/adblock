@@ -1,0 +1,65 @@
+---
+export const prerender = true;
+import { type CollectionEntry, getCollection } from "astro:content";
+import PageLayout from "@/layouts/Base.astro";
+
+export async function getStaticPaths() {
+	try {
+		// Get pages first
+		const pages = await getCollection("pages");
+		console.log(
+			"Found pages:",
+			pages.map((p) => p.slug),
+		);
+
+		// Try to get posts, but don't fail if collection doesn't exist
+		let posts = [];
+		try {
+			posts = await getCollection("posts");
+		} catch (e) {
+			console.warn("Posts collection not available:", e);
+		}
+
+		const allEntries = [...pages, ...posts];
+
+		return allEntries.map((entry) => {
+			const cleanSlug =
+				entry.slug ||
+				entry.id
+					.split("/")
+					.pop()
+					?.replace(/\.(md|mdx|mdoc)$/, "");
+
+			return {
+				params: { slug: cleanSlug },
+				props: { entry },
+			};
+		});
+	} catch (e) {
+		console.error("Error in getStaticPaths:", e);
+		return [];
+	}
+}
+
+type Props = {
+	entry: CollectionEntry<"pages" | "posts">;
+};
+
+const { entry } = Astro.props;
+if (!entry) return Astro.redirect("/404");
+
+let Content;
+try {
+	({ Content } = await entry.render());
+} catch (e) {
+	console.error("Error rendering content:", e);
+	return Astro.redirect("/404");
+}
+---
+
+<PageLayout>
+	<article>
+		<h1>{entry.data.title}</h1>
+		<Content />
+	</article>
+</PageLayout>

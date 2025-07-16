@@ -1,0 +1,156 @@
+---
+export const prerender = true;
+import type { GetStaticPaths, Page } from "astro";
+import type { CollectionEntry } from "astro:content";
+import { getEntry } from 'astro:content';
+import Pagination from "@/components/Paginator.astro";
+import PostPreview from "@/components/blog/PostPreview.astro";
+import { getAllPosts, getUniqueTags, groupPostsByYear, sortMDByDate } from "@/data/post";
+import PageLayout from "@/layouts/Base.astro";
+
+interface SiteSettings {
+  MAX_POSTS_PER_PAGE: number;
+  defaultView: 'grid' | 'swipe';
+  showTags: boolean;
+  showDates: boolean;
+}
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const siteSettings = await getEntry('siteSettings', 'main');
+
+  // Define settings with fallbacks
+  const settings: SiteSettings = {
+    MAX_POSTS_PER_PAGE: siteSettings?.data?.MAX_POSTS_PER_PAGE ?? 10,
+    defaultView: siteSettings?.data?.defaultView ?? 'grid',
+    showTags: siteSettings?.data?.showTags ?? true,
+    showDates: siteSettings?.data?.showDates ?? true
+  };
+
+  const allPosts = await getAllPosts();
+  const allPostsByDate = sortMDByDate(allPosts);
+  const uniqueTags = getUniqueTags(allPosts);
+  
+  return paginate(allPostsByDate, { 
+    pageSize: settings.MAX_POSTS_PER_PAGE,
+    props: { 
+      uniqueTags, 
+      defaultView: settings.defaultView,
+      showTags: settings.showTags,
+      showDates: settings.showDates
+    } 
+  });
+}) satisfies GetStaticPaths;
+
+// Get language settings for the page content
+const language = await getEntry('language', 'index');
+
+interface Props {
+  page: Page<CollectionEntry<"post">>;
+  uniqueTags: string[];
+  defaultView: string;
+  showTags: boolean;
+  showDates: boolean;
+}
+
+const { page, uniqueTags, defaultView, showTags, showDates } = Astro.props;
+
+const meta = {
+	description: "Read my collection of posts and the things that interest me",
+	title: "Posts",
+};
+
+const paginationProps = {
+	...(page.url.prev && {
+		prevUrl: {
+			text: `← Previous Page`,
+			url: page.url.prev,
+		},
+	}),
+	...(page.url.next && {
+		nextUrl: {
+			text: `Next Page →`,
+			url: page.url.next,
+		},
+	}),
+};
+
+const groupedByYear = groupPostsByYear(page.data);
+const descYearKeys = Object.keys(groupedByYear).sort((a, b) => +b - +a);
+
+---
+
+<PageLayout meta={meta} themeMode="user">
+
+	
+		<br />
+<span class="prose prose-lg dark:prose-invert">
+		<div class={`contentpanel ${defaultView === 'swipe' ? 'slider panels horizontal-slider' : 'grid-container'}`} style="">
+			
+			<div class="sliderSpacer"></div>
+				{descYearKeys.map((yearKey) => (
+					<>
+						{typeof showDates !== 'undefined' && showDates && (
+							<div class="grid place-content-center">
+								<h2 class="title text-lg">{yearKey}</h2>
+							</div>
+						)}
+						{groupedByYear[yearKey]?.map((p) => (
+							<PostPreview post={p} />
+						))}
+					</>
+				))}
+
+				<div class="grid place-content-center min-w-[380px] min-h-[180px] max-h-[85%] ">
+					<Pagination {...paginationProps} />
+				</div>
+			</div>
+		{typeof showTags !== 'undefined' && showTags && (
+<div class="">
+		{!!uniqueTags.length && (
+			<aside class="p-4 flex gap-4 items-center" style="max-width: 100%;">
+				<h2 class="title mb-4 flex items-center text-lg">
+					<svg
+						aria-hidden="true"
+						class="h-6 w-6"
+						fill="none"
+						stroke="currentColor"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="1.5"
+						viewBox="0 0 24 24"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path d="M0 0h24v24H0z" fill="none" stroke="none" />
+						<path d="M7.859 6h-2.834a2.025 2.025 0 0 0 -2.025 2.025v2.834c0 .537 .213 1.052 .593 1.432l6.116 6.116a2.025 2.025 0 0 0 2.864 0l2.834 -2.834a2.025 2.025 0 0 0 0 -2.864l-6.117 -6.116a2.025 2.025 0 0 0 -1.431 -.593z" />
+						<path d="M17.573 18.407l2.834 -2.834a2.025 2.025 0 0 0 0 -2.864l-7.117 -7.116" />
+						<path d="M6 9h-.01" />
+					</svg>
+					{language?.data?.tags ?? "Tags"}
+				</h2>
+				<ul class="flex flex-wrap gap-2 text-bgColor button" style="">
+					{uniqueTags.map((tag) => (
+						<li>
+							<a
+								aria-label={`View all posts with the tag: ${tag}`}
+								class="flex items-center justify-center rounded-lg p-1"
+								href={`/tags/${tag}/`}
+							>
+								{tag}
+							</a>
+						</li>
+					))}
+				</ul>
+				<span class="mt-4 block sm:text-start" style="width:170px; text-align: right; display:flex; justify-content: end;">
+					<a aria-label="View all blog categories" class="sm:hover:text-accent" href="/tags/">
+						{language?.data?.viewall} →
+					</a>
+				</span>
+			</aside>
+		)}
+	</div>
+
+)}
+<br /><br />
+</div>
+</span>
+</PageLayout>

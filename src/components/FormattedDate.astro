@@ -1,0 +1,15 @@
+---
+import { getFormattedDate } from '../utils/date';
+
+interface Props {
+  date: Date | string;
+  class?: string;
+}
+
+const { date, class: className } = Astro.props;
+const formattedDate = getFormattedDate(date);
+---
+
+<time datetime={date instanceof Date ? date.toISOString() : new Date(date).toISOString()} class={className}>
+  {formattedDate}
+</time>
