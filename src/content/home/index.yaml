@@ -1,11 +1,9 @@
 sectionOrdering:
-  - posts
-  - bio
+  - app
 featureImage: {}
 youtube:
   discriminant: false
-showMore: true
-cta: Keystatic Cloud Sign Up
+showMore: false
 pitch: How It Works
 pitch2: Social Media That YOU Control
 pitch3: High Seas Freedom

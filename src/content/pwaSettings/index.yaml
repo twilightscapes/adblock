@@ -1,13 +1,15 @@
-showRobots: false
-siteUrl: https://pirateweb.org
-title: Title of another Pirate site
-description: Thanks for being a pirate!
-name: PIRATE
-shortName: PIRATE
+showRobots: true
+siteUrl: https://adblock.video
+title: AdBlock Video - Easily remove YouTube Ads for FREE
+description: >-
+  AdBlock Video is a free tool to remove YouTube ads and stop the auto advance.
+  Create custom video links to share.
+name: AdBlock Video
+shortName: AdBlock Video
 screenshot: /images/pwa/screenshot.png
 themeColor: rgba(0, 0, 0, 1)
 backgroundColor: rgba(0, 0, 0, 1)
-startUrl: /
+startUrl: /video
 display: standalone
 icon192: /images/pwa/icon192.webp
 icon512: /images/pwa/icon512.webp
