@@ -1,7 +1,6 @@
 sectionOrdering:
   - feature
   - app
-  - bio
 featureImage:
   src: /images/homepage/featureImage/src.webp
   alt: Paste YouTube Url Here
