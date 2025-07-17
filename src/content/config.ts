@@ -55,6 +55,15 @@ const contactPage = defineCollection({
 });
 
 export const collections = {
+  // Post collection
+  post: defineCollection({
+    type: 'content',
+    schema: postSchema,
+  }),
+
+  // Contact Page collection  
+  contactPage,
+
   // Home collection
   home: defineCollection({
     type: 'data',
@@ -63,6 +72,8 @@ export const collections = {
       featureImage: z.object({
         src: z.string().optional(),
         alt: z.string().optional(),
+        height: z.number().optional(),
+        width: z.number().optional(),
       }).optional(),
       youtube: z.object({
         value: z.object({
@@ -111,26 +122,6 @@ export const collections = {
       customCSS: z.string().optional()
     })
   }),
-
-  posts: defineCollection({
-    type: 'content',
-    schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    publishDate: z.date(),
-    updatedDate: z.date().optional(),
-    coverImage: z.object({
-      src: z.string(),
-      alt: z.string(),
-    }).optional(),
-    tags: z.array(z.string()).default([]),
-    draft: z.boolean().default(false),
-  }),
-  }),
-
-
-
-
 
   pages: defineCollection({
     type: 'content',

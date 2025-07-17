@@ -259,7 +259,9 @@ flex-direction: column;
                   ? {
                       featureImage: {
                         src: (homeData.featureImage as any).src ?? '',
-                        alt: (homeData.featureImage as any).alt ?? ''
+                        alt: (homeData.featureImage as any).alt ?? '',
+                        height: (homeData.featureImage as any).height ?? 400,
+                        width: (homeData.featureImage as any).width ?? 600
                       }
                     }
                   : {})

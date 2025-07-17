@@ -52,6 +52,9 @@ const pwaConfig = pwaSettings || {
 };
 
 export default defineConfig({
+  devToolbar: {
+    enabled: false
+  },
   integrations: [react(), icon(), tailwind({
     applyBaseStyles: false
   }), sitemap(), keystatic(),
