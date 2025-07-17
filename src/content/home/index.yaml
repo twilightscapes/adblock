@@ -1,6 +1,6 @@
 sectionOrdering:
+  - feature
   - app
-  - bio
   - posts
 featureImage:
   src: /images/homepage/featureImage/src.webp
@@ -11,3 +11,4 @@ showMore: true
 pitch: How It Works
 pitch2: Social Media That YOU Control
 pitch3: High Seas Freedom
+postsectiontitle: AdBlock Video Examples
