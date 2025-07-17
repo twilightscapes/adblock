@@ -369,9 +369,9 @@ export default config({
         divider3: fields.empty(),
         videoTimeLimitMinutes: fields.number({ 
           label: 'Video Time Limit (Minutes)', 
-          description: 'Free users can watch videos for this many minutes before seeing upgrade prompt (1-30 minutes)',
-          defaultValue: 1,
-          validation: { min: 1, max: 30 }
+          description: 'Set to -1 to disable timer, 0 for immediate paywall, or 1-30 minutes for timed limit',
+          defaultValue: -1,
+          validation: { min: -1, max: 30 }
         }),
       },
     }),

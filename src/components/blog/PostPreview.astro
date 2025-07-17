@@ -262,6 +262,33 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
       e.stopPropagation();
       
       if (thumbnail && youtubeEmbed) {
+        // First, stop all other videos and reset them to thumbnail view
+        document.querySelectorAll('.video-container').forEach(otherContainer => {
+          if (otherContainer !== container) {
+            const otherThumbnail = otherContainer.querySelector('.video-thumbnail') as HTMLElement;
+            const otherPlayButton = otherContainer.querySelector('.play-button') as HTMLElement;
+            const otherYoutubeEmbed = otherContainer.querySelector('.youtube-embed') as HTMLElement;
+            
+            if (otherThumbnail && otherPlayButton && otherYoutubeEmbed) {
+              // Stop the video by clearing iframe src or stopping custom player
+              const otherIframe = otherYoutubeEmbed.querySelector('iframe');
+              if (otherIframe) {
+                otherIframe.src = 'about:blank'; // This stops the video and audio
+              }
+              
+              // Reset to thumbnail view
+              otherThumbnail.style.display = 'block';
+              otherPlayButton.style.display = 'block';
+              otherYoutubeEmbed.style.display = 'none';
+            }
+          }
+        });
+        
+        // Dispatch stop event for other videos
+        const stopEvent = new CustomEvent('stopAllVideos');
+        document.dispatchEvent(stopEvent);
+        
+        // Then start the clicked video
         thumbnail.style.display = 'none';
         playButton.style.display = 'none';
         youtubeEmbed.style.display = 'block';

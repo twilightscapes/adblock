@@ -113,7 +113,7 @@ function extractVideoId(input) {
 let videoToolbarPlaybackTimer = null;
 let videoToolbarPlaybackStartTime = null;
 let videoToolbarElapsedTime = 0;
-const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
+const PLAYBACK_LIMIT_MS = Math.max(0, videoTimeLimitMinutes) * 60000; // Convert minutes to milliseconds, handle negative values
 
 // Membership system
 function checkMembership() {
@@ -163,14 +163,37 @@ function updateMembershipStatus() {
     statusEl.textContent = '✓ Premium Member';
     statusEl.className = '';
   } else {
-    statusEl.textContent = `⚠ Free (${videoTimeLimitMinutes} min limit)`;
-    statusEl.className = 'free';
+    // Handle different timer states
+    if (videoTimeLimitMinutes === -1) {
+      statusEl.textContent = '🆓 Free (No time limit)';
+      statusEl.className = 'free';
+    } else if (videoTimeLimitMinutes === 0) {
+      statusEl.textContent = '🔒 Paywall Active';
+      statusEl.className = 'free';
+    } else {
+      statusEl.textContent = `⚠ Free (${videoTimeLimitMinutes} min limit)`;
+      statusEl.className = 'free';
+    }
   }
 }
 
 function startPlaybackTimer() {
   // Skip timer if user has membership
   if (checkMembership()) {
+    return;
+  }
+  
+  // Skip timer if disabled (-1)
+  if (videoTimeLimitMinutes === -1) {
+    return;
+  }
+  
+  // Show immediate paywall if set to 0
+  if (videoTimeLimitMinutes === 0) {
+    // Show paywall immediately, no delay
+    setTimeout(() => {
+      showUpgradeMessage();
+    }, 100); // Very short delay to ensure UI is ready
     return;
   }
   

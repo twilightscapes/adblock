@@ -110,10 +110,12 @@ const playerVars: { [key: string]: number | string } = {
   let controlsTimeout;
 
   // Timer-based playback limitation for YouTube embeds
+  // Create unique instance variables using video ID to avoid conflicts
+  const instanceId = `youtube-embed-${videoId || Math.random().toString(36).substring(7)}`;
   let youtubeEmbedPlaybackTimer = null;
   let youtubeEmbedPlaybackStartTime = null;
   let youtubeEmbedElapsedTime = 0;
-  const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
+  const PLAYBACK_LIMIT_MS = Math.max(0, videoTimeLimitMinutes) * 60000; // Convert minutes to milliseconds, handle negative values
 
   // Membership system
   function checkMembership() {
@@ -161,6 +163,20 @@ const playerVars: { [key: string]: number | string } = {
       return;
     }
     
+    // Skip timer if disabled (-1)
+    if (videoTimeLimitMinutes === -1) {
+      return;
+    }
+    
+    // Show immediate paywall if set to 0
+    if (videoTimeLimitMinutes === 0) {
+      // Show paywall immediately, no delay
+      setTimeout(() => {
+        showCompactUpgradeMessage();
+      }, 100); // Very short delay to ensure UI is ready
+      return;
+    }
+    
     if (youtubeEmbedPlaybackTimer) {
       clearTimeout(youtubeEmbedPlaybackTimer);
     }
@@ -191,6 +207,11 @@ const playerVars: { [key: string]: number | string } = {
   function resetPlaybackTimer() {
     stopPlaybackTimer();
     youtubeEmbedElapsedTime = 0;
+    youtubeEmbedPlaybackStartTime = null;
+    if (youtubeEmbedPlaybackTimer) {
+      clearTimeout(youtubeEmbedPlaybackTimer);
+      youtubeEmbedPlaybackTimer = null;
+    }
     hideCompactUpgradeMessage();
   }
 
@@ -519,7 +540,7 @@ const playerVars: { [key: string]: number | string } = {
       iframe.addEventListener('load', () => {
         resetPlaybackTimer(); // Reset timer for new video
         setTimeout(() => {
-          if (!checkMembership()) {
+          if (!checkMembership() && videoTimeLimitMinutes !== -1) {
             startPlaybackTimer();
           }
         }, 2000); // Delay to ensure video starts
@@ -529,11 +550,9 @@ const playerVars: { [key: string]: number | string } = {
       const iframeContainer = iframe.parentElement;
       if (iframeContainer) {
         iframeContainer.addEventListener('click', () => {
-          if (!checkMembership()) {
-            // If timer had previously expired and user is clicking again, reset for new session
-            if (elapsedTime >= PLAYBACK_LIMIT_MS) {
-              resetPlaybackTimer();
-            }
+          if (!checkMembership() && videoTimeLimitMinutes !== -1) {
+            // Always reset timer state when user clicks to ensure fresh start
+            resetPlaybackTimer();
             
             setTimeout(() => {
               startPlaybackTimer();
@@ -588,9 +607,48 @@ const playerVars: { [key: string]: number | string } = {
     }
   });
 
+  // Listen for stop all videos event
+  document.addEventListener('stopAllVideos', () => {
+    // Stop this instance's timer
+    stopPlaybackTimer();
+    
+    // Stop custom player if it exists
+    if (player && player.pauseVideo) {
+      player.pauseVideo();
+    }
+    
+    // For iframe version, the PostPreview already set src to about:blank
+    // We don't need to do anything else as the video will be reloaded when clicked again
+    
+    // Reset timer state for this instance
+    youtubeEmbedElapsedTime = 0;
+    youtubeEmbedPlaybackStartTime = null;
+    
+    // Hide any upgrade messages
+    hideCompactUpgradeMessage();
+  });
+
   // Listen for custom reset timer events from PostPreview component
   document.addEventListener('resetVideoTimer', () => {
+    // This event fires when a video is about to start
+    // First ensure the iframe src is properly set (in case it was cleared)
+    const iframe = document.getElementById('youtube-iframe');
+    if (iframe && videoId) {
+      const expectedSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&playsinline=1&modestbranding=1&rel=0&showinfo=0&fs=0&endscreen=0`;
+      if (iframe.src !== expectedSrc) {
+        iframe.src = expectedSrc;
+      }
+    }
+    
     resetPlaybackTimer();
+    
+    // Start timer immediately when video becomes visible (unless disabled or premium)
+    if (!checkMembership() && videoTimeLimitMinutes !== -1) {
+      // Small delay to ensure the video embed is ready
+      setTimeout(() => {
+        startPlaybackTimer();
+      }, 500);
+    }
   });
 
   const tag = document.createElement('script');
