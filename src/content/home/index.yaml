@@ -2,6 +2,7 @@ sectionOrdering:
   - feature
   - app
   - posts
+  - infoblock3
 featureImage:
   src: /images/homepage/featureImage/src.webp
   alt: Paste YouTube Url Here
@@ -10,5 +11,5 @@ youtube:
 showMore: true
 pitch: How It Works
 pitch2: Social Media That YOU Control
-pitch3: High Seas Freedom
+pitch3: Life's too short to watch ads!
 postsectiontitle: AdBlock Video Examples
