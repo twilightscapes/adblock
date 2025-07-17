@@ -1,6 +1,10 @@
 sectionOrdering:
+  - feature
   - app
-featureImage: {}
+  - bio
+featureImage:
+  src: /images/homepage/featureImage/src.webp
+  alt: Paste YouTube Url Here
 youtube:
   discriminant: false
 showMore: false
