@@ -109,10 +109,10 @@ const playerVars: { [key: string]: number | string } = {
   let player;
   let controlsTimeout;
 
-  // Timer-based playback limitation
-  let playbackTimer = null;
-  let playbackStartTime = null;
-  let elapsedTime = 0;
+  // Timer-based playback limitation for YouTube embeds
+  let youtubeEmbedPlaybackTimer = null;
+  let youtubeEmbedPlaybackStartTime = null;
+  let youtubeEmbedElapsedTime = 0;
   const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
 
   // Membership system
@@ -161,15 +161,15 @@ const playerVars: { [key: string]: number | string } = {
       return;
     }
     
-    if (playbackTimer) {
-      clearTimeout(playbackTimer);
+    if (youtubeEmbedPlaybackTimer) {
+      clearTimeout(youtubeEmbedPlaybackTimer);
     }
     
-    playbackStartTime = Date.now() - elapsedTime;
-    const remainingTime = PLAYBACK_LIMIT_MS - elapsedTime;
+    youtubeEmbedPlaybackStartTime = Date.now() - youtubeEmbedElapsedTime;
+    const remainingTime = PLAYBACK_LIMIT_MS - youtubeEmbedElapsedTime;
     
     if (remainingTime > 0) {
-      playbackTimer = setTimeout(() => {
+      youtubeEmbedPlaybackTimer = setTimeout(() => {
         showCompactUpgradeMessage();
       }, remainingTime);
     } else {
@@ -178,19 +178,19 @@ const playerVars: { [key: string]: number | string } = {
   }
 
   function stopPlaybackTimer() {
-    if (playbackTimer) {
-      clearTimeout(playbackTimer);
-      playbackTimer = null;
+    if (youtubeEmbedPlaybackTimer) {
+      clearTimeout(youtubeEmbedPlaybackTimer);
+      youtubeEmbedPlaybackTimer = null;
     }
-    if (playbackStartTime) {
-      elapsedTime += Date.now() - playbackStartTime;
-      playbackStartTime = null;
+    if (youtubeEmbedPlaybackStartTime) {
+      youtubeEmbedElapsedTime += Date.now() - youtubeEmbedPlaybackStartTime;
+      youtubeEmbedPlaybackStartTime = null;
     }
   }
 
   function resetPlaybackTimer() {
     stopPlaybackTimer();
-    elapsedTime = 0;
+    youtubeEmbedElapsedTime = 0;
     hideCompactUpgradeMessage();
   }
 
@@ -317,6 +317,11 @@ const playerVars: { [key: string]: number | string } = {
     }
   }
     function onPlayerReady(event) {
+    player = event.target;
+    
+    // Reset timer when new video is loaded/ready
+    resetPlaybackTimer();
+    
     const centerControls = document.querySelector('.center-controls');
     const muteButton = document.getElementById('mute');
     const volumeSlider = document.getElementById('volume');
@@ -461,6 +466,12 @@ const playerVars: { [key: string]: number | string } = {
       if (event.data === YT.PlayerState.PLAYING) {
         hideControls();
         checkAndLoop();
+        
+        // If timer had previously expired and user is playing again, reset for new session
+        if (youtubeEmbedElapsedTime >= PLAYBACK_LIMIT_MS) {
+          resetPlaybackTimer();
+        }
+        
         startPlaybackTimer(); // Start timer when video starts playing
       } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
         showControls();
@@ -504,8 +515,9 @@ const playerVars: { [key: string]: number | string } = {
   function setupIframeTimer() {
     const iframe = document.getElementById('youtube-iframe');
     if (iframe) {
-      // Start timer when iframe loads (assuming autoplay)
+      // Reset timer when iframe loads (new video)
       iframe.addEventListener('load', () => {
+        resetPlaybackTimer(); // Reset timer for new video
         setTimeout(() => {
           if (!checkMembership()) {
             startPlaybackTimer();
@@ -518,6 +530,11 @@ const playerVars: { [key: string]: number | string } = {
       if (iframeContainer) {
         iframeContainer.addEventListener('click', () => {
           if (!checkMembership()) {
+            // If timer had previously expired and user is clicking again, reset for new session
+            if (elapsedTime >= PLAYBACK_LIMIT_MS) {
+              resetPlaybackTimer();
+            }
+            
             setTimeout(() => {
               startPlaybackTimer();
             }, 500);
@@ -569,6 +586,11 @@ const playerVars: { [key: string]: number | string } = {
     if (resetMembershipParam === 'true') {
       resetMembership();
     }
+  });
+
+  // Listen for custom reset timer events from PostPreview component
+  document.addEventListener('resetVideoTimer', () => {
+    resetPlaybackTimer();
   });
 
   const tag = document.createElement('script');

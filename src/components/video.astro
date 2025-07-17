@@ -109,10 +109,10 @@ function extractVideoId(input) {
   return null;
 }
 
-// Timer-based playback limitation
-let playbackTimer = null;
-let playbackStartTime = null;
-let elapsedTime = 0;
+// Timer-based playback limitation for video toolbar
+let videoToolbarPlaybackTimer = null;
+let videoToolbarPlaybackStartTime = null;
+let videoToolbarElapsedTime = 0;
 const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
 
 // Membership system
@@ -174,15 +174,25 @@ function startPlaybackTimer() {
     return;
   }
   
-  if (playbackTimer) {
-    clearTimeout(playbackTimer);
+  // Only start timer if there's actually a video loaded and it's a YouTube video
+  const videoFrameEl = document.getElementById('video-frame');
+  if (!videoFrameEl || 
+      !videoFrameEl.src || 
+      videoFrameEl.src === '' || 
+      videoFrameEl.src === 'about:blank' ||
+      !videoFrameEl.src.includes('youtube.com/embed/')) {
+    return;
   }
   
-  playbackStartTime = Date.now() - elapsedTime;
-  const remainingTime = PLAYBACK_LIMIT_MS - elapsedTime;
+  if (videoToolbarPlaybackTimer) {
+    clearTimeout(videoToolbarPlaybackTimer);
+  }
+  
+  videoToolbarPlaybackStartTime = Date.now() - videoToolbarElapsedTime;
+  const remainingTime = PLAYBACK_LIMIT_MS - videoToolbarElapsedTime;
   
   if (remainingTime > 0) {
-    playbackTimer = setTimeout(() => {
+    videoToolbarPlaybackTimer = setTimeout(() => {
       showUpgradeMessage();
     }, remainingTime);
   } else {
@@ -191,19 +201,19 @@ function startPlaybackTimer() {
 }
 
 function stopPlaybackTimer() {
-  if (playbackTimer) {
-    clearTimeout(playbackTimer);
-    playbackTimer = null;
+  if (videoToolbarPlaybackTimer) {
+    clearTimeout(videoToolbarPlaybackTimer);
+    videoToolbarPlaybackTimer = null;
   }
-  if (playbackStartTime) {
-    elapsedTime += Date.now() - playbackStartTime;
-    playbackStartTime = null;
+  if (videoToolbarPlaybackStartTime) {
+    videoToolbarElapsedTime += Date.now() - videoToolbarPlaybackStartTime;
+    videoToolbarPlaybackStartTime = null;
   }
 }
 
 function resetPlaybackTimer() {
   stopPlaybackTimer();
-  elapsedTime = 0;
+  videoToolbarElapsedTime = 0;
   hideUpgradeMessage();
 }
 
@@ -340,7 +350,12 @@ function setupVideoEventListeners() {
   // Listen for iframe load
   videoFrameEl.addEventListener('load', () => {
     const autoplayCheckboxEl = document.getElementById('autoplay-checkbox');
-    if (autoplayCheckboxEl && autoplayCheckboxEl.checked) {
+    // Only start timer if autoplay is checked AND there's actually a video URL AND it's not about:blank
+    if (autoplayCheckboxEl && autoplayCheckboxEl.checked && 
+        videoFrameEl.src && 
+        videoFrameEl.src !== '' && 
+        videoFrameEl.src !== 'about:blank' &&
+        videoFrameEl.src.includes('youtube.com/embed/')) {
       // Start timer after a brief delay to ensure video starts
       setTimeout(() => {
         startPlaybackTimer();
@@ -352,10 +367,18 @@ function setupVideoEventListeners() {
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (target && target.closest('#video-frame')) {
-      // User clicked on video frame, assume playback started
-      setTimeout(() => {
-        startPlaybackTimer();
-      }, 500);
+      const videoFrameEl = document.getElementById('video-frame');
+      // Only start timer if there's actually a video loaded and it's a YouTube video
+      if (videoFrameEl && 
+          videoFrameEl.src && 
+          videoFrameEl.src !== '' && 
+          videoFrameEl.src !== 'about:blank' &&
+          videoFrameEl.src.includes('youtube.com/embed/')) {
+        // User clicked on video frame, assume playback started
+        setTimeout(() => {
+          startPlaybackTimer();
+        }, 500);
+      }
     }
   });
 }
@@ -398,7 +421,16 @@ function updateVideoAndLink() {
     if (stop) embedUrl += `&end=${parseFloat(stop)}`;
     if (loop) embedUrl += `&loop=1&playlist=${videoId}`;
   }
-  if (videoFrameEl && 'src' in videoFrameEl) videoFrameEl.src = embedUrl;
+  
+  // Only set iframe src if there's actually a video URL
+  if (videoFrameEl && 'src' in videoFrameEl) {
+    if (embedUrl) {
+      videoFrameEl.src = embedUrl;
+    } else {
+      // Clear the iframe if no video
+      videoFrameEl.src = 'about:blank';
+    }
+  }
 
   // Build query string
   const params = new URLSearchParams();

@@ -265,6 +265,11 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
         thumbnail.style.display = 'none';
         playButton.style.display = 'none';
         youtubeEmbed.style.display = 'block';
+        
+        // Reset timer when switching from thumbnail to video
+        // This dispatches a custom event that the YouTubeEmbed can listen for
+        const resetEvent = new CustomEvent('resetVideoTimer');
+        document.dispatchEvent(resetEvent);
       }
     });
   });
