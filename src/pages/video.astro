@@ -63,6 +63,29 @@
       #start-input, #stop-input {max-width:30px; border:0px solid red;}
       #share-link { color: #fff; font-size: 0.9em; word-break: break-all; margin-left: 12px; }
       #copy-btn { margin-left: 8px; }
+      
+      /* Membership status indicator */
+      #membership-status {
+        position: relative;
+        min-width: 120px;
+        background: rgba(76, 175, 80, 0.9);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 20;
+        align-content: center;
+        justify-content: center;
+        text-align: center;
+        max-width: 120px;
+        margin:0 auto;
+      }
+      
+      #membership-status.free {
+        background: rgba(255, 193, 7, 0.9);
+        color: #333;
+      }
     </style>
 <script>
 // Utility: Extract YouTube video ID from URL or ID
@@ -78,6 +101,257 @@ function extractVideoId(input: string) {
   match = input.match(/([a-zA-Z0-9_-]{11})/);
   if (match) return match[1];
   return null;
+}
+
+// Timer-based playback limitation
+let playbackTimer: any = null;
+let playbackStartTime: number | null = null;
+let elapsedTime: number = 0;
+const PLAYBACK_LIMIT_MS = 60000; // 1 minute in milliseconds
+
+// Membership system
+function checkMembership() {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'video_membership') {
+      try {
+        const membershipData = JSON.parse(decodeURIComponent(value));
+        // Check if membership is valid (not expired)
+        if (membershipData.expires > Date.now()) {
+          return true;
+        }
+      } catch (e) {
+        // Invalid cookie, remove it
+        document.cookie = 'video_membership=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      }
+    }
+  }
+  return false;
+}
+
+function setMembership(membershipToken: string) {
+  // Set cookie to expire in 1 year
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 1);
+  
+  const membershipData = {
+    token: membershipToken,
+    expires: expires.getTime(),
+    activated: Date.now()
+  };
+  
+  document.cookie = `video_membership=${encodeURIComponent(JSON.stringify(membershipData))}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+}
+
+function resetMembership() {
+  document.cookie = 'video_membership=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  location.reload();
+}
+
+function updateMembershipStatus() {
+  const statusEl = document.getElementById('membership-status');
+  if (!statusEl) return;
+  
+  if (checkMembership()) {
+    statusEl.textContent = '✓ Premium Member';
+    statusEl.className = '';
+  } else {
+    statusEl.textContent = '⚠ Free (1 min limit)';
+    statusEl.className = 'free';
+  }
+}
+
+function startPlaybackTimer() {
+  // Skip timer if user has membership
+  if (checkMembership()) {
+    return;
+  }
+  
+  if (playbackTimer) {
+    clearTimeout(playbackTimer);
+  }
+  
+  playbackStartTime = Date.now() - elapsedTime;
+  const remainingTime = PLAYBACK_LIMIT_MS - elapsedTime;
+  
+  if (remainingTime > 0) {
+    playbackTimer = setTimeout(() => {
+      showUpgradeMessage();
+    }, remainingTime);
+  } else {
+    showUpgradeMessage();
+  }
+}
+
+function stopPlaybackTimer() {
+  if (playbackTimer) {
+    clearTimeout(playbackTimer);
+    playbackTimer = null;
+  }
+  if (playbackStartTime) {
+    elapsedTime += Date.now() - playbackStartTime;
+    playbackStartTime = null;
+  }
+}
+
+function resetPlaybackTimer() {
+  stopPlaybackTimer();
+  elapsedTime = 0;
+  hideUpgradeMessage();
+}
+
+function showUpgradeMessage() {
+  const videoFrame = document.getElementById('video-frame') as HTMLIFrameElement | null;
+  if (videoFrame) {
+    videoFrame.style.display = 'none';
+    // Stop the video by clearing the src
+    videoFrame.src = '';
+  }
+  
+  // Create or update upgrade message
+  let upgradeMessage = document.getElementById('upgrade-message');
+  if (!upgradeMessage) {
+    upgradeMessage = document.createElement('div');
+    upgradeMessage.id = 'upgrade-message';
+    upgradeMessage.style.cssText = `
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 100vw;
+      height: calc(100vh - 60px);
+      background: #222;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      font-size: 1.5em;
+      text-align: center;
+      padding: 20px;
+    `;
+    document.body.appendChild(upgradeMessage);
+  }
+  
+  upgradeMessage.innerHTML = `
+    <div style="max-width: 600px;">
+      <h2 style="margin-bottom: 20px; font-size: 2em;">1-Minute Limit Reached</h2>
+      <p style="margin-bottom: 30px;">Your free viewing time has expired.</p>
+      <p style="margin-bottom: 30px; font-size: 1.1em; color: #4CAF50;">
+        🎬 Get unlimited video access for just <strong>$4.99</strong> (one-time payment)
+      </p>
+      <button id="upgrade-btn" style="
+        background: linear-gradient(45deg, #4CAF50, #45a049);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 1.2em;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+      " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        🔓 Upgrade Now - $4.99
+      </button>
+      <br />
+      <p style="font-size: 0.8em; opacity: 0.7; margin-top: 20px;">
+        ✓ Lifetime access • ✓ No monthly fees • ✓ Instant activation
+      </p>
+    </div>
+  `;
+  upgradeMessage.style.display = 'flex';
+  
+  // Add click handler for upgrade button
+  const upgradeBtn = document.getElementById('upgrade-btn');
+  if (upgradeBtn) {
+    upgradeBtn.addEventListener('click', initializeStripePayment);
+  }
+}
+
+// Stripe payment integration
+function initializeStripePayment() {
+  // TODO: Replace with your actual Stripe publishable key
+  const STRIPE_PUBLIC_KEY = 'pk_test_your_stripe_key_here';
+  
+  // Load Stripe.js if not already loaded
+  if (!(window as any).Stripe) {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.onload = () => createStripeCheckout();
+    document.head.appendChild(script);
+  } else {
+    createStripeCheckout();
+  }
+}
+
+function createStripeCheckout() {
+  // TODO: Replace with your actual Stripe publishable key
+  const stripe = (window as any).Stripe('pk_test_your_stripe_key_here');
+  
+  // Create checkout session
+  fetch('/api/create-checkout-session', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      priceId: 'price_your_price_id_here', // Replace with your Stripe price ID
+    }),
+  })
+  .then(response => response.json())
+  .then(session => {
+    return stripe.redirectToCheckout({ sessionId: session.id });
+  })
+  .then(result => {
+    if (result.error) {
+      console.error('Stripe error:', result.error.message);
+    }
+  })
+  .catch(error => {
+    console.error('Payment error:', error);
+  });
+}
+
+function hideUpgradeMessage() {
+  const videoFrame = document.getElementById('video-frame') as HTMLIFrameElement | null;
+  if (videoFrame) {
+    videoFrame.style.display = 'block';
+    // Note: The video src will be restored when updateVideoAndLink() is called
+  }
+  
+  const upgradeMessage = document.getElementById('upgrade-message');
+  if (upgradeMessage) {
+    upgradeMessage.style.display = 'none';
+  }
+}
+
+// Function to setup iframe message listener for video events
+function setupVideoEventListeners() {
+  const videoFrameEl = document.getElementById('video-frame') as HTMLIFrameElement | null;
+  if (!videoFrameEl) return;
+  
+  // Listen for iframe load
+  videoFrameEl.addEventListener('load', () => {
+    const autoplayCheckboxEl = document.getElementById('autoplay-checkbox') as HTMLInputElement | null;
+    if (autoplayCheckboxEl && autoplayCheckboxEl.checked) {
+      // Start timer after a brief delay to ensure video starts
+      setTimeout(() => {
+        startPlaybackTimer();
+      }, 2000);
+    }
+  });
+  
+  // Listen for user interaction on the document that might start video playback
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    if (target && target.closest('#video-frame')) {
+      // User clicked on video frame, assume playback started
+      setTimeout(() => {
+        startPlaybackTimer();
+      }, 500);
+    }
+  });
 }
 
 // Update video and query string
@@ -103,6 +377,14 @@ function updateVideoAndLink() {
   const hideMenu = hideMenuCheckboxEl ? hideMenuCheckboxEl.checked : false;
 
   const videoId = extractVideoId(videoInput);
+  
+  // Reset timer when video changes
+  if (videoId) {
+    resetPlaybackTimer();
+  } else {
+    stopPlaybackTimer();
+  }
+  
   let embedUrl = '';
   if (videoId) {
     embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&modestbranding=1`;
@@ -144,6 +426,45 @@ function copyShareLink() {
 // On load: initialize from query string
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
+  
+  // Check for membership activation token
+  const membershipToken = params.get('membership');
+  if (membershipToken) {
+    setMembership(membershipToken);
+    // Remove the token from URL for security
+    const newUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+    
+    // Update membership status display
+    updateMembershipStatus();
+    
+    // Show success message
+    const successMessage = document.createElement('div');
+    successMessage.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    `;
+    successMessage.textContent = '✓ Membership activated! Enjoy unlimited video access.';
+    document.body.appendChild(successMessage);
+    
+    setTimeout(() => {
+      successMessage.remove();
+    }, 5000);
+  }
+  
+  // Check for membership reset
+  const resetMembershipParam = params.get('reset_membership');
+  if (resetMembershipParam === 'true') {
+    resetMembership();
+  }
+  
   const videoInputEl = document.getElementById('video-input') as HTMLInputElement | null;
   const startInputEl = document.getElementById('start-input') as HTMLInputElement | null;
   const stopInputEl = document.getElementById('stop-input') as HTMLInputElement | null;
@@ -167,6 +488,13 @@ window.addEventListener('DOMContentLoaded', () => {
   if (hideControlsMenu && menuBarEl) {
     menuBarEl.classList.add('hidden');
   }
+  
+  // Setup video event listeners
+  setupVideoEventListeners();
+  
+  // Update membership status display
+  updateMembershipStatus();
+  
   updateVideoAndLink();
 
   // Add listeners
@@ -199,11 +527,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (autoplayCheckboxEl) autoplayCheckboxEl.checked = true;
     if (hideMenuCheckboxEl) hideMenuCheckboxEl.checked = false;
 
+    // Reset the timer when clearing
+    resetPlaybackTimer();
     updateVideoAndLink();
   });
 });
 </script>
 
+    
+    
     <div id="menu-bar">
       <div id="bigbox" style="display: flex;">
         
@@ -249,7 +581,7 @@ Copy Link
   Clear
 </button>
 
-        
+        <div id="membership-status"></div>
 
       </div>
     </div>
