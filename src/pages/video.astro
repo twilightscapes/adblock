@@ -1,95 +1,99 @@
 ---
+import { getEntry } from 'astro:content';
 
+// Get site settings for video time limit
+const siteSettings = await getEntry('siteSettings', 'main');
+const videoTimeLimitMinutes = siteSettings?.data?.videoTimeLimitMinutes ?? 1;
 ---
 
+<style>
+html{overflow-x: hidden;}
 
-  <style>
-    html{overflow-x: hidden;}
+input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
+font-size: 16px !important;
+}
 
-    input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
-    font-size: 16px !important;
-  }
-
-      #menu-bar {
-        position: absolute;
-        width: 100vw;
-        z-index: 10;
-        top:0;
-        background: rgba(0,0,0,0.85);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 2vw;
-        padding: 2px 0;
-        justify-content: center;
-        font-family: sans-serif !important;
-        font-size:10px;
-      }
-      #menu-bar.hidden { display: none; }
-      .menu-input { min-width: 20px; max-width: 400px; padding: 4px; }
-      .menu-checkbox { margin-left: 8px; }
-      .menu-label { font-size: 0.95em; }
-
-        #checkboxes {
-    justify-content: center !important;
-    align-items: center !important;
-    width: 100%;
-    margin: 0 auto;
-    text-align: center;
-  }
-  #checkboxes .menu-label {
+  #menu-bar {
+    position: absolute;
+    width: 100vw;
+    z-index: 10;
+    top:0;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
     display: flex;
-    flex-direction: column;
     align-items: center;
+    gap: 2vw;
+    padding: 2px 0;
+    justify-content: center;
+    font-family: sans-serif !important;
+    font-size:10px;
+  }
+  #menu-bar.hidden { display: none; }
+  .menu-input { min-width: 20px; max-width: 400px; padding: 4px; }
+  .menu-checkbox { margin-left: 8px; }
+  .menu-label { font-size: 0.95em; }
+
+    #checkboxes {
+justify-content: center !important;
+align-items: center !important;
+width: 100%;
+margin: 0 auto;
+text-align: center;
+}
+#checkboxes .menu-label {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+text-align: center;
+width: 70px;
+}
+
+  #video-frame {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    border: none;
+    z-index: 1;
+  }
+@media (max-width: 38rem) {
+  #bigbox{display:flex; flex-direction: column !important; padding:10px 0 0 0; gap:2vh;}
+  .menu-label { font-size: 1.8em; justify-content: center; align-items: center; align-content: center; }
+#checkboxes .menu-label {width: 18vw;}
+  
+}
+
+  #start-input, #stop-input {max-width:30px; border:0px solid red;}
+  #share-link { color: #fff; font-size: 0.9em; word-break: break-all; margin-left: 12px; }
+  #copy-btn { margin-left: 8px; }
+  
+  /* Membership status indicator */
+  #membership-status {
+    position: relative;
+    min-width: 120px;
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 20;
+    align-content: center;
     justify-content: center;
     text-align: center;
-    width: 70px;
+    max-width: 120px;
+    margin:2px auto;
   }
+  
+  #membership-status.free {
+    background: rgba(255, 193, 7, 0.9);
+    color: #333;
+  }
+</style>
 
-      #video-frame {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        border: none;
-        z-index: 1;
-      }
-   @media (max-width: 38rem) {
-      #bigbox{display:flex; flex-direction: column !important; padding:10px 0 0 0; gap:2vh;}
-      .menu-label { font-size: 1.8em; justify-content: center; align-items: center; align-content: center; }
-#checkboxes .menu-label {width: 18vw;}
-      
-   }
-
-      #start-input, #stop-input {max-width:30px; border:0px solid red;}
-      #share-link { color: #fff; font-size: 0.9em; word-break: break-all; margin-left: 12px; }
-      #copy-btn { margin-left: 8px; }
-      
-      /* Membership status indicator */
-      #membership-status {
-        position: relative;
-        min-width: 120px;
-        background: rgba(76, 175, 80, 0.9);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 12px;
-        font-weight: bold;
-        z-index: 20;
-        align-content: center;
-        justify-content: center;
-        text-align: center;
-        max-width: 120px;
-        margin:0 auto;
-      }
-      
-      #membership-status.free {
-        background: rgba(255, 193, 7, 0.9);
-        color: #333;
-      }
-    </style>
-<script>
+<script define:vars={{ videoTimeLimitMinutes }}>
 // Utility: Extract YouTube video ID from URL or ID
-function extractVideoId(input: string) {
+function extractVideoId(input) {
   if (!input) return null;
   if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
   let match = input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
@@ -104,10 +108,10 @@ function extractVideoId(input: string) {
 }
 
 // Timer-based playback limitation
-let playbackTimer: any = null;
-let playbackStartTime: number | null = null;
-let elapsedTime: number = 0;
-const PLAYBACK_LIMIT_MS = 60000; // 1 minute in milliseconds
+let playbackTimer = null;
+let playbackStartTime = null;
+let elapsedTime = 0;
+const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
 
 // Membership system
 function checkMembership() {
@@ -130,7 +134,7 @@ function checkMembership() {
   return false;
 }
 
-function setMembership(membershipToken: string) {
+function setMembership(membershipToken) {
   // Set cookie to expire in 1 year
   const expires = new Date();
   expires.setFullYear(expires.getFullYear() + 1);
@@ -157,7 +161,7 @@ function updateMembershipStatus() {
     statusEl.textContent = '✓ Premium Member';
     statusEl.className = '';
   } else {
-    statusEl.textContent = '⚠ Free (1 min limit)';
+    statusEl.textContent = `⚠ Free (${videoTimeLimitMinutes} min limit)`;
     statusEl.className = 'free';
   }
 }
@@ -202,7 +206,7 @@ function resetPlaybackTimer() {
 }
 
 function showUpgradeMessage() {
-  const videoFrame = document.getElementById('video-frame') as HTMLIFrameElement | null;
+  const videoFrame = document.getElementById('video-frame');
   if (videoFrame) {
     videoFrame.style.display = 'none';
     // Stop the video by clearing the src
@@ -234,8 +238,8 @@ function showUpgradeMessage() {
   }
   
   upgradeMessage.innerHTML = `
-    <div style="max-width: 600px;">
-      <h2 style="margin-bottom: 20px; font-size: 2em;">1-Minute Limit Reached</h2>
+    <div style="max-width: 800px;">
+      <h2 style="margin-bottom: 20px; font-size: 2em;">${videoTimeLimitMinutes}-Minute Limit Reached</h2>
       <p style="margin-bottom: 30px;">Your free viewing time has expired.</p>
       <p style="margin-bottom: 30px; font-size: 1.1em; color: #4CAF50;">
         🎬 Get unlimited video access for just <strong>$4.99</strong> (one-time payment)
@@ -275,7 +279,7 @@ function initializeStripePayment() {
   const STRIPE_PUBLIC_KEY = 'pk_test_your_stripe_key_here';
   
   // Load Stripe.js if not already loaded
-  if (!(window as any).Stripe) {
+  if (!window.Stripe) {
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/';
     script.onload = () => createStripeCheckout();
@@ -287,7 +291,7 @@ function initializeStripePayment() {
 
 function createStripeCheckout() {
   // TODO: Replace with your actual Stripe publishable key
-  const stripe = (window as any).Stripe('pk_test_your_stripe_key_here');
+  const stripe = window.Stripe('pk_test_your_stripe_key_here');
   
   // Create checkout session
   fetch('/api/create-checkout-session', {
@@ -314,7 +318,7 @@ function createStripeCheckout() {
 }
 
 function hideUpgradeMessage() {
-  const videoFrame = document.getElementById('video-frame') as HTMLIFrameElement | null;
+  const videoFrame = document.getElementById('video-frame');
   if (videoFrame) {
     videoFrame.style.display = 'block';
     // Note: The video src will be restored when updateVideoAndLink() is called
@@ -328,12 +332,12 @@ function hideUpgradeMessage() {
 
 // Function to setup iframe message listener for video events
 function setupVideoEventListeners() {
-  const videoFrameEl = document.getElementById('video-frame') as HTMLIFrameElement | null;
+  const videoFrameEl = document.getElementById('video-frame');
   if (!videoFrameEl) return;
   
   // Listen for iframe load
   videoFrameEl.addEventListener('load', () => {
-    const autoplayCheckboxEl = document.getElementById('autoplay-checkbox') as HTMLInputElement | null;
+    const autoplayCheckboxEl = document.getElementById('autoplay-checkbox');
     if (autoplayCheckboxEl && autoplayCheckboxEl.checked) {
       // Start timer after a brief delay to ensure video starts
       setTimeout(() => {
@@ -344,7 +348,7 @@ function setupVideoEventListeners() {
   
   // Listen for user interaction on the document that might start video playback
   document.addEventListener('click', (event) => {
-    const target = event.target as HTMLElement;
+    const target = event.target;
     if (target && target.closest('#video-frame')) {
       // User clicked on video frame, assume playback started
       setTimeout(() => {
@@ -356,16 +360,16 @@ function setupVideoEventListeners() {
 
 // Update video and query string
 function updateVideoAndLink() {
-  const videoInputEl = document.getElementById('video-input') as HTMLInputElement | null;
-  const startInputEl = document.getElementById('start-input') as HTMLInputElement | null;
-  const stopInputEl = document.getElementById('stop-input') as HTMLInputElement | null;
-  const loopCheckboxEl = document.getElementById('loop-checkbox') as HTMLInputElement | null;
-  const muteCheckboxEl = document.getElementById('mute-checkbox') as HTMLInputElement | null;
-  const controlsCheckboxEl = document.getElementById('controls-checkbox') as HTMLInputElement | null;
-  const autoplayCheckboxEl = document.getElementById('autoplay-checkbox') as HTMLInputElement | null;
-  const hideMenuCheckboxEl = document.getElementById('hide-menu-checkbox') as HTMLInputElement | null;
-  const videoFrameEl = document.getElementById('video-frame') as HTMLIFrameElement | null;
-  const shareLinkEl = document.getElementById('share-link') as HTMLElement | null;
+  const videoInputEl = document.getElementById('video-input');
+  const startInputEl = document.getElementById('start-input');
+  const stopInputEl = document.getElementById('stop-input');
+  const loopCheckboxEl = document.getElementById('loop-checkbox');
+  const muteCheckboxEl = document.getElementById('mute-checkbox');
+  const controlsCheckboxEl = document.getElementById('controls-checkbox');
+  const autoplayCheckboxEl = document.getElementById('autoplay-checkbox');
+  const hideMenuCheckboxEl = document.getElementById('hide-menu-checkbox');
+  const videoFrameEl = document.getElementById('video-frame');
+  const shareLinkEl = document.getElementById('share-link');
 
   const videoInput = videoInputEl ? videoInputEl.value.trim() : '';
   const start = startInputEl ? startInputEl.value.trim() : '';
@@ -465,14 +469,14 @@ window.addEventListener('DOMContentLoaded', () => {
     resetMembership();
   }
   
-  const videoInputEl = document.getElementById('video-input') as HTMLInputElement | null;
-  const startInputEl = document.getElementById('start-input') as HTMLInputElement | null;
-  const stopInputEl = document.getElementById('stop-input') as HTMLInputElement | null;
-  const loopCheckboxEl = document.getElementById('loop-checkbox') as HTMLInputElement | null;
-  const muteCheckboxEl = document.getElementById('mute-checkbox') as HTMLInputElement | null;
-  const controlsCheckboxEl = document.getElementById('controls-checkbox') as HTMLInputElement | null;
-  const autoplayCheckboxEl = document.getElementById('autoplay-checkbox') as HTMLInputElement | null;
-  const hideMenuCheckboxEl = document.getElementById('hide-menu-checkbox') as HTMLInputElement | null;
+  const videoInputEl = document.getElementById('video-input');
+  const startInputEl = document.getElementById('start-input');
+  const stopInputEl = document.getElementById('stop-input');
+  const loopCheckboxEl = document.getElementById('loop-checkbox');
+  const muteCheckboxEl = document.getElementById('mute-checkbox');
+  const controlsCheckboxEl = document.getElementById('controls-checkbox');
+  const autoplayCheckboxEl = document.getElementById('autoplay-checkbox');
+  const hideMenuCheckboxEl = document.getElementById('hide-menu-checkbox');
   const menuBarEl = document.getElementById('menu-bar');
 
   if (videoInputEl) videoInputEl.value = params.get('video') || '';
@@ -508,83 +512,73 @@ window.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   const clearBtn = document.getElementById('clear-btn');
-  clearBtn?.addEventListener('click', () => {
-    const videoInputEl = document.getElementById('video-input') as HTMLInputElement | null;
-    const startInputEl = document.getElementById('start-input') as HTMLInputElement | null;
-    const stopInputEl = document.getElementById('stop-input') as HTMLInputElement | null;
-    const loopCheckboxEl = document.getElementById('loop-checkbox') as HTMLInputElement | null;
-    const muteCheckboxEl = document.getElementById('mute-checkbox') as HTMLInputElement | null;
-    const controlsCheckboxEl = document.getElementById('controls-checkbox') as HTMLInputElement | null;
-    const autoplayCheckboxEl = document.getElementById('autoplay-checkbox') as HTMLInputElement | null;
-    const hideMenuCheckboxEl = document.getElementById('hide-menu-checkbox') as HTMLInputElement | null;
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      const videoInputEl = document.getElementById('video-input');
+      const startInputEl = document.getElementById('start-input');
+      const stopInputEl = document.getElementById('stop-input');
+      const loopCheckboxEl = document.getElementById('loop-checkbox');
+      const muteCheckboxEl = document.getElementById('mute-checkbox');
+      const controlsCheckboxEl = document.getElementById('controls-checkbox');
+      const autoplayCheckboxEl = document.getElementById('autoplay-checkbox');
+      const hideMenuCheckboxEl = document.getElementById('hide-menu-checkbox');
 
-    if (videoInputEl) videoInputEl.value = '';
-    if (startInputEl) startInputEl.value = '';
-    if (stopInputEl) stopInputEl.value = '';
-    if (loopCheckboxEl) loopCheckboxEl.checked = true;
-    if (muteCheckboxEl) muteCheckboxEl.checked = true;
-    if (controlsCheckboxEl) controlsCheckboxEl.checked = true;
-    if (autoplayCheckboxEl) autoplayCheckboxEl.checked = true;
-    if (hideMenuCheckboxEl) hideMenuCheckboxEl.checked = false;
+      if (videoInputEl) videoInputEl.value = '';
+      if (startInputEl) startInputEl.value = '';
+      if (stopInputEl) stopInputEl.value = '';
+      if (loopCheckboxEl) loopCheckboxEl.checked = true;
+      if (muteCheckboxEl) muteCheckboxEl.checked = true;
+      if (controlsCheckboxEl) controlsCheckboxEl.checked = true;
+      if (autoplayCheckboxEl) autoplayCheckboxEl.checked = true;
+      if (hideMenuCheckboxEl) hideMenuCheckboxEl.checked = false;
 
-    // Reset the timer when clearing
-    resetPlaybackTimer();
-    updateVideoAndLink();
-  });
+      // Reset the timer when clearing
+      resetPlaybackTimer();
+      updateVideoAndLink();
+    });
+  }
 });
 </script>
 
-    
-    
-    <div id="menu-bar">
-      <div id="bigbox" style="display: flex;">
-        
-
-
-        <div id="timers" style="display: flex; flex-direction:row; gap: 10px; align-items: center; width:100%; padding:0 10px 0 5px;">
-<input type="text" id="video-input" class="menu-input" placeholder="Paste Link" style="padding: .5vh .2vw; min-width:105px; width: 100%; max-width: 500px; text-align:center; font-size: clamp(.6rem,1vw,1rem); transition: all .4s ease-in-out; background:rgba(0,0,0,.2); color:#ddd; outline:1px solid #999; border:1px solid var(--theme-ui-colors-siteColor);" aria-label="Paste Link To Video" />
-
-          <input type="text" id="start-input" class="menu-input" placeholder="Start" style="padding: .5vh .2vw; min-width:40px; width: 40px; max-width: 500px; text-align:center; font-size: clamp(.6rem,1vw,1rem); transition: all .4s ease-in-out; background:rgba(0,0,0,.2); color:#ddd; outline:1px solid #999; border:1px solid var(--theme-ui-colors-siteColor);" aria-label="Video Start Time" />
-          <input type="text" id="stop-input" class="menu-input" placeholder="Stop" style="padding: .5vh .2vw; min-width:40px; width: 40px; max-width: 500px; text-align:center; font-size: clamp(.6rem,1vw,1rem); transition: all .4s ease-in-out; background:rgba(0,0,0,.2); color:#ddd; outline:1px solid #999; border:1px solid var(--theme-ui-colors-siteColor);" aria-label="Video Stop Time" />
-        </div>
-
-
-        <div id="checkboxes" style="display: flex; flex-direction:row; gap: 5px; align-items: center; padding:0 10px 5px 0; justify-content:center; background:rgba(0,0,0,.1); outline:0px solid #777; border-radius:var(--theme-ui-colors-borderRadius); font-size:clamp(.5rem,1.2vw,1rem);">
-          <label class="menu-label">Loop<br />
-            <input type="checkbox" id="loop-checkbox" class="menu-checkbox" checked />
-          </label>
-          <label class="menu-label">Mute<br />
-            <input type="checkbox" id="mute-checkbox" class="menu-checkbox" checked />
-          </label>
-          <label class="menu-label">Controls<br />
-            <input type="checkbox" id="controls-checkbox" class="menu-checkbox" checked />
-          </label>
-          <label class="menu-label">Autoplay<br />
-            <input type="checkbox" id="autoplay-checkbox" class="menu-checkbox" checked />
-          </label>
-          <label class="menu-label">Hide<br />
-            <input type="checkbox" id="hide-menu-checkbox" class="menu-checkbox" />
-          </label>
-
-
-        </div>
-
-                <div id="pastebox" style="display: none; flex-direction:row; gap: 2vw; align-items: center; justify-content:center; width:100%;">
-          <span id="share-link"></span>
-        </div>
-
-<button id="copy-btn" class="button font print" aria-label="Create Link" style={{ display: "flex", gap: '.5vw', justifyContent: "center", padding: ".6vh 3vw", width:'auto', minWidth:'60px', maxWidth: "100px", margin: "0 auto", textAlign: 'center', outline:'1px solid #6B1D1D', fontSize: '11px', fontWeight: 'light', textShadow: '0 1px 0 #444', marginLeft:'', }}>
-Copy Link
-</button>
-
-<button id="clear-btn" aria-label="Clear Form" style="margin-left: 5px; padding: .6vh .5vw; min-width:60px; font-size:14px; outline:none; border:none;background:transparent; color:#ddd">
-  Clear
-</button>
-
-        <div id="membership-status"></div>
-
-      </div>
+<div id="menu-bar">
+  <div id="bigbox" style="display: flex;">
+    <div id="timers" style="display: flex; flex-direction:row; gap: 10px; align-items: center; width:100%; padding:0 10px 0 5px;">
+      <input type="text" id="video-input" class="menu-input" placeholder="Paste Link" style="padding: .5vh .2vw; min-width:105px; width: 100%; max-width: 500px; text-align:center; font-size: clamp(.6rem,1vw,1rem); transition: all .4s ease-in-out; background:rgba(0,0,0,.2); color:#ddd; outline:1px solid #999; border:1px solid var(--theme-ui-colors-siteColor);" aria-label="Paste Link To Video" />
+      <input type="text" id="start-input" class="menu-input" placeholder="Start" style="padding: .5vh .2vw; min-width:40px; width: 40px; max-width: 500px; text-align:center; font-size: clamp(.6rem,1vw,1rem); transition: all .4s ease-in-out; background:rgba(0,0,0,.2); color:#ddd; outline:1px solid #999; border:1px solid var(--theme-ui-colors-siteColor);" aria-label="Video Start Time" />
+      <input type="text" id="stop-input" class="menu-input" placeholder="Stop" style="padding: .5vh .2vw; min-width:40px; width: 40px; max-width: 500px; text-align:center; font-size: clamp(.6rem,1vw,1rem); transition: all .4s ease-in-out; background:rgba(0,0,0,.2); color:#ddd; outline:1px solid #999; border:1px solid var(--theme-ui-colors-siteColor);" aria-label="Video Stop Time" />
     </div>
-    <iframe id="video-frame" allow="autoplay; fullscreen"></iframe>
 
+    <div id="checkboxes" style="display: flex; flex-direction:row; gap: 5px; align-items: center; padding:0 10px 5px 0; justify-content:center; background:rgba(0,0,0,.1); outline:0px solid #777; border-radius:var(--theme-ui-colors-borderRadius); font-size:clamp(.5rem,1.2vw,1rem);">
+      <label class="menu-label">Loop<br />
+        <input type="checkbox" id="loop-checkbox" class="menu-checkbox" checked />
+      </label>
+      <label class="menu-label">Mute<br />
+        <input type="checkbox" id="mute-checkbox" class="menu-checkbox" checked />
+      </label>
+      <label class="menu-label">Controls<br />
+        <input type="checkbox" id="controls-checkbox" class="menu-checkbox" checked />
+      </label>
+      <label class="menu-label">Autoplay<br />
+        <input type="checkbox" id="autoplay-checkbox" class="menu-checkbox" checked />
+      </label>
+      <label class="menu-label">Hide<br />
+        <input type="checkbox" id="hide-menu-checkbox" class="menu-checkbox" />
+      </label>
+    </div>
 
+    <div id="pastebox" style="display: none; flex-direction:row; gap: 2vw; align-items: center; justify-content:center; width:100%;">
+      <span id="share-link"></span>
+    </div>
+
+    <button id="copy-btn" class="button font print" aria-label="Create Link" style="display: flex; gap: .5vw; justify-content: center; padding: .6vh 3vw; width: auto; min-width: 60px; max-width: 100px; margin: 0 auto; text-align: center; outline: 1px solid #6B1D1D; font-size: 11px; font-weight: light; text-shadow: 0 1px 0 #444; margin-left: ;">
+      Copy Link
+    </button>
+
+    <button id="clear-btn" aria-label="Clear Form" style="margin-left: 5px; padding: .6vh .5vw; min-width:60px; font-size:14px; outline:none; border:none;background:transparent; color:#ddd">
+      Clear
+    </button>
+
+    <div id="membership-status"></div>
+  </div>
+</div>
+<iframe id="video-frame" allow="autoplay; fullscreen"></iframe>

@@ -366,6 +366,13 @@ export default config({
         showSocial: fields.checkbox({ label: 'Show Social Links in Posts' }),
         showTags: fields.checkbox({ label: 'Show Post Tags', description: 'Hide/Show the post tags', defaultValue: false }),
         showShare: fields.checkbox({ label: 'Show Share section on posts', description: 'Hide/Show the share this copy button on posts', defaultValue: false }),
+        divider3: fields.empty(),
+        videoTimeLimitMinutes: fields.number({ 
+          label: 'Video Time Limit (Minutes)', 
+          description: 'Free users can watch videos for this many minutes before seeing upgrade prompt (1-30 minutes)',
+          defaultValue: 1,
+          validation: { min: 1, max: 30 }
+        }),
       },
     }),
     pwaSettings: singleton({
