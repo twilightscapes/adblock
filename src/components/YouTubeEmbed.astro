@@ -3,6 +3,10 @@ import { getEntry } from 'astro:content';
 
 const language = await getEntry('language', 'index');
 
+// Get site settings for video time limit
+const siteSettings = await getEntry('siteSettings', 'main');
+const videoTimeLimitMinutes = siteSettings?.data?.videoTimeLimitMinutes ?? 1;
+
 
 interface Props {
   url: string;
@@ -62,15 +66,15 @@ const playerVars: { [key: string]: number | string } = {
       </div>
       <div class="bottom-tray" style="">
 
-        <label for="progress" style="width:100%;">{language.data.progress}
+        <label for="progress" style="width:100%;">{language?.data?.progress || 'Progress'}
           <span style="width:100%; padding:1.5vh 1rem; background:#111; border-radius:var(--border-radius);"><input type="range" id="progress" min="0" max="100" value="0" class="progress-bar"></span>
         </label>
 
-        <label for="volume">{language.data.volume}
+        <label for="volume">{language?.data?.volume || 'Volume'}
         <span style="padding:1.5vh 1rem; background:#111; border-radius:var(--border-radius);"><input type="range" id="volume" min="0" max="100" value="100" class="volume-slider"></span></label>
               
       <label for="mute-icon" style="" class="mute-label">
-        {language.data.mute}
+        {language?.data?.mute || 'Mute'}
         <span style="padding:.3vh .5rem; background:#111; border-radius:var(--border-radius);">
         <button id="mute" class="control-button" style="padding-top:3px;">
       <svg id="mute-icon" viewBox="0 0 16 16" height="16px" width="16px" xmlns="http://www.w3.org/2000/svg">
@@ -85,23 +89,188 @@ const playerVars: { [key: string]: number | string } = {
     </div>
   </div>
 ) : (
-  <iframe
-    width="100%"
-    height="450"
-    src={`https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&amp;playsinline=1&amp;modestbranding=1&amp;rel=0&amp;showinfo=0&amp;fs=0&amp;endscreen=0`}
-    title={title}
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowfullscreen
-    style="aspect-ratio: 16/9; min-height: 80vh;"
-
-  ></iframe>
+  <div class="iframe-youtube-player" style="position: relative; width: 100%; aspect-ratio: 16/9;">
+    <iframe
+      id="youtube-iframe"
+      width="100%"
+      height="100%"
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&amp;playsinline=1&amp;modestbranding=1&amp;rel=0&amp;showinfo=0&amp;fs=0&amp;endscreen=0`}
+      title={title}
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      style="aspect-ratio: 16/9;"
+    ></iframe>
+  </div>
 )}
 
-<script define:vars={{ videoId, playerVars, start, end, loop }}>
+<script define:vars={{ videoId, playerVars, start, end, loop, videoTimeLimitMinutes }}>
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   let player;
   let controlsTimeout;
+
+  // Timer-based playback limitation
+  let playbackTimer = null;
+  let playbackStartTime = null;
+  let elapsedTime = 0;
+  const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
+
+  // Membership system
+  function checkMembership() {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'video_membership') {
+        try {
+          const membershipData = JSON.parse(decodeURIComponent(value));
+          // Check if membership is valid (not expired)
+          if (membershipData.expires > Date.now()) {
+            return true;
+          }
+        } catch (e) {
+          // Invalid cookie, remove it
+          document.cookie = 'video_membership=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        }
+      }
+    }
+    return false;
+  }
+
+  function setMembership(membershipToken) {
+    // Set cookie to expire in 1 year
+    const expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 1);
+    
+    const membershipData = {
+      token: membershipToken,
+      expires: expires.getTime(),
+      activated: Date.now()
+    };
+    
+    document.cookie = `video_membership=${encodeURIComponent(JSON.stringify(membershipData))}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+  }
+
+  function resetMembership() {
+    document.cookie = 'video_membership=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    location.reload();
+  }
+
+  function startPlaybackTimer() {
+    // Skip timer if user has membership
+    if (checkMembership()) {
+      return;
+    }
+    
+    if (playbackTimer) {
+      clearTimeout(playbackTimer);
+    }
+    
+    playbackStartTime = Date.now() - elapsedTime;
+    const remainingTime = PLAYBACK_LIMIT_MS - elapsedTime;
+    
+    if (remainingTime > 0) {
+      playbackTimer = setTimeout(() => {
+        showCompactUpgradeMessage();
+      }, remainingTime);
+    } else {
+      showCompactUpgradeMessage();
+    }
+  }
+
+  function stopPlaybackTimer() {
+    if (playbackTimer) {
+      clearTimeout(playbackTimer);
+      playbackTimer = null;
+    }
+    if (playbackStartTime) {
+      elapsedTime += Date.now() - playbackStartTime;
+      playbackStartTime = null;
+    }
+  }
+
+  function resetPlaybackTimer() {
+    stopPlaybackTimer();
+    elapsedTime = 0;
+    hideCompactUpgradeMessage();
+  }
+
+  function showCompactUpgradeMessage() {
+    // Stop the video
+    if (player && player.pauseVideo) {
+      player.pauseVideo();
+    }
+    
+    // Find the parent container
+    const playerContainer = document.querySelector('.custom-youtube-player') || document.querySelector('iframe').parentElement;
+    if (!playerContainer) return;
+    
+    // Create or update compact upgrade message
+    let upgradeMessage = playerContainer.querySelector('.compact-upgrade-message');
+    if (!upgradeMessage) {
+      upgradeMessage = document.createElement('div');
+      upgradeMessage.className = 'compact-upgrade-message';
+      upgradeMessage.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        text-align: center;
+        padding: 10px;
+        box-sizing: border-box;
+      `;
+      playerContainer.appendChild(upgradeMessage);
+    }
+    
+    upgradeMessage.innerHTML = `
+      <div style="max-width: 100%; font-size: clamp(0.7rem, 2vw, 1rem);">
+        <div style="margin-bottom: 8px; font-weight: bold; color: #FFD700;">
+          ⏱️ ${videoTimeLimitMinutes} min limit reached
+        </div>
+        <div style="margin-bottom: 12px; font-size: 0.9em;">
+          Get unlimited access
+        </div>
+        <button class="compact-upgrade-btn" style="
+          background: linear-gradient(45deg, #4CAF50, #45a049);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          font-size: 0.85em;
+          border-radius: 4px;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          transition: all 0.3s ease;
+        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          🔓 Upgrade - $4.99
+        </button>
+        <div style="font-size: 0.7em; opacity: 0.8; margin-top: 8px;">
+          One-time payment • Lifetime access
+        </div>
+      </div>
+    `;
+    
+    // Add click handler for upgrade button
+    const upgradeBtn = upgradeMessage.querySelector('.compact-upgrade-btn');
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', () => {
+        // Redirect to main video page with upgrade flow
+        window.location.href = '/video?upgrade=true';
+      });
+    }
+  }
+
+  function hideCompactUpgradeMessage() {
+    const upgradeMessage = document.querySelector('.compact-upgrade-message');
+    if (upgradeMessage) {
+      upgradeMessage.remove();
+    }
+  }
 
   window.onYouTubeIframeAPIReady = function() {
     player = new YT.Player('youtube-player', {
@@ -292,8 +461,10 @@ const playerVars: { [key: string]: number | string } = {
       if (event.data === YT.PlayerState.PLAYING) {
         hideControls();
         checkAndLoop();
+        startPlaybackTimer(); // Start timer when video starts playing
       } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
         showControls();
+        stopPlaybackTimer(); // Stop timer when video is paused or ended
       }
     });
   }
@@ -328,6 +499,77 @@ const playerVars: { [key: string]: number | string } = {
       }
     }, 100);
   }
+
+  // For iframe version, add timer functionality
+  function setupIframeTimer() {
+    const iframe = document.getElementById('youtube-iframe');
+    if (iframe) {
+      // Start timer when iframe loads (assuming autoplay)
+      iframe.addEventListener('load', () => {
+        setTimeout(() => {
+          if (!checkMembership()) {
+            startPlaybackTimer();
+          }
+        }, 2000); // Delay to ensure video starts
+      });
+      
+      // Add click handler to iframe container for interaction-based timer
+      const iframeContainer = iframe.parentElement;
+      if (iframeContainer) {
+        iframeContainer.addEventListener('click', () => {
+          if (!checkMembership()) {
+            setTimeout(() => {
+              startPlaybackTimer();
+            }, 500);
+          }
+        });
+      }
+    }
+  }
+
+  // Initialize iframe timer if not using custom player
+  if (document.getElementById('youtube-iframe')) {
+    setupIframeTimer();
+  }
+
+  // Handle membership activation and reset from URL parameters
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Check for membership activation token
+    const membershipToken = params.get('membership');
+    if (membershipToken) {
+      setMembership(membershipToken);
+      
+      // Show success message
+      const successMessage = document.createElement('div');
+      successMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 6px;
+        z-index: 1000;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        font-size: 14px;
+        font-family: system-ui, -apple-system, sans-serif;
+      `;
+      successMessage.textContent = '✓ Membership activated! Unlimited video access.';
+      document.body.appendChild(successMessage);
+      
+      setTimeout(() => {
+        successMessage.remove();
+      }, 4000);
+    }
+    
+    // Check for membership reset
+    const resetMembershipParam = params.get('reset_membership');
+    if (resetMembershipParam === 'true') {
+      resetMembership();
+    }
+  });
 
   const tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
@@ -531,6 +773,46 @@ input[type="range"]::-webkit-slider-thumb {
 
   .mute-label.muted {
     color: red;
+  }
+
+  /* Compact upgrade message styles */
+  .compact-upgrade-message {
+    font-family: system-ui, -apple-system, sans-serif;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .compact-upgrade-message .compact-upgrade-btn {
+    transition: all 0.3s ease;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .compact-upgrade-message .compact-upgrade-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  }
+
+  .compact-upgrade-message .compact-upgrade-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* Responsive adjustments for very small containers */
+  @media (max-width: 320px) {
+    .compact-upgrade-message {
+      padding: 5px;
+    }
+    
+    .compact-upgrade-message .compact-upgrade-btn {
+      padding: 6px 12px;
+      font-size: 0.75em;
+    }
+  }
+
+  /* Ensure the iframe container can handle the overlay */
+  .iframe-youtube-player {
+    position: relative;
+    overflow: hidden;
   }
 </style>
 

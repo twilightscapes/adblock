@@ -1,12 +1,13 @@
 sectionOrdering:
-  - feature
   - app
+  - bio
+  - posts
 featureImage:
   src: /images/homepage/featureImage/src.webp
   alt: Paste YouTube Url Here
 youtube:
   discriminant: false
-showMore: false
+showMore: true
 pitch: How It Works
 pitch2: Social Media That YOU Control
 pitch3: High Seas Freedom
