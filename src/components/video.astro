@@ -50,8 +50,8 @@ width: 70px;
 }
 
   #video-frame {
-    position: absolute;
-    top: 0; left: 0;
+    position: relative;
+
     width: 100vw;
     /* height: 100vh; */
     aspect-ratio: 16/9;
@@ -316,11 +316,12 @@ function showUpgradeMessage() {
     upgradeMessage = document.createElement('div');
     upgradeMessage.id = 'upgrade-message';
     upgradeMessage.style.cssText = `
-      position: fixed;
+      position: absolute;
       top: 60px;
       left: 0;
       width: 100vw;
       height: calc(100vh - 60px);
+      height:auto;
       background: #222;
       color: #fff;
       display: flex;

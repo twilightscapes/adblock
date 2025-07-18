@@ -52,7 +52,7 @@ width: 70px;
   #video-frame {
     position: absolute;
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100vw; height: 90vh;
     border: none;
     z-index: 1;
   }
@@ -219,11 +219,12 @@ function showUpgradeMessage() {
     upgradeMessage = document.createElement('div');
     upgradeMessage.id = 'upgrade-message';
     upgradeMessage.style.cssText = `
-      position: fixed;
-      top: 60px;
+      position: absolute;
+      top: 48px;
       left: 0;
       width: 100vw;
-      height: calc(100vh - 60px);
+      // height: calc(100vh - 60px);
+      height:auto;
       background: #222;
       color: #fff;
       display: flex;
