@@ -113,7 +113,11 @@ function extractVideoId(input) {
 let videoToolbarPlaybackTimer = null;
 let videoToolbarPlaybackStartTime = null;
 let videoToolbarElapsedTime = 0;
-const PLAYBACK_LIMIT_MS = Math.max(0, videoTimeLimitMinutes) * 60000; // Convert minutes to milliseconds, handle negative values
+// Use global timer flag for consistency with YouTubeEmbed
+if (!window.videoToolbarTimerExpired) {
+  window.videoToolbarTimerExpired = false;
+}
+const PLAYBACK_LIMIT_MS = videoTimeLimitMinutes * 60000; // Convert minutes to milliseconds
 
 // Membership system
 function checkMembership() {
@@ -178,18 +182,30 @@ function updateMembershipStatus() {
 }
 
 function startPlaybackTimer() {
+  console.log('video.astro: startPlaybackTimer called');
+  
+  // Don't start timer if it already expired
+  if (window.videoToolbarTimerExpired) {
+    console.log('video.astro: Timer already expired, not starting new timer');
+    showUpgradeMessage();
+    return;
+  }
+  
   // Skip timer if user has membership
   if (checkMembership()) {
+    console.log('video.astro: Timer skipped - user has membership');
     return;
   }
   
   // Skip timer if disabled (-1)
   if (videoTimeLimitMinutes === -1) {
+    console.log('video.astro: Timer skipped - disabled (-1)');
     return;
   }
   
   // Show immediate paywall if set to 0
   if (videoTimeLimitMinutes === 0) {
+    console.log('video.astro: Timer set to 0 - showing immediate paywall');
     // Show paywall immediately, no delay
     setTimeout(() => {
       showUpgradeMessage();
@@ -204,8 +220,11 @@ function startPlaybackTimer() {
       videoFrameEl.src === '' || 
       videoFrameEl.src === 'about:blank' ||
       !videoFrameEl.src.includes('youtube.com/embed/')) {
+    console.log('video.astro: Timer skipped - no valid video loaded');
     return;
   }
+  
+  console.log('video.astro: Starting timer for', videoTimeLimitMinutes, 'minutes');
   
   if (videoToolbarPlaybackTimer) {
     clearTimeout(videoToolbarPlaybackTimer);
@@ -215,10 +234,13 @@ function startPlaybackTimer() {
   const remainingTime = PLAYBACK_LIMIT_MS - videoToolbarElapsedTime;
   
   if (remainingTime > 0) {
+    console.log('video.astro: Setting timer for', remainingTime, 'ms');
     videoToolbarPlaybackTimer = setTimeout(() => {
+      console.log('video.astro: Timer expired');
       showUpgradeMessage();
     }, remainingTime);
   } else {
+    console.log('video.astro: Timer already expired, showing upgrade message');
     showUpgradeMessage();
   }
 }
@@ -237,15 +259,55 @@ function stopPlaybackTimer() {
 function resetPlaybackTimer() {
   stopPlaybackTimer();
   videoToolbarElapsedTime = 0;
+  window.videoToolbarTimerExpired = false; // Reset the flag
   hideUpgradeMessage();
 }
 
 function showUpgradeMessage() {
+  console.log('video.astro: showUpgradeMessage called');
+  
+  // Set flag to prevent timer loops
+  window.videoToolbarTimerExpired = true;
+  
+  // Stop any running timer
+  if (videoToolbarPlaybackTimer) {
+    clearTimeout(videoToolbarPlaybackTimer);
+    videoToolbarPlaybackTimer = null;
+  }
+  
+  // Clear the playback timer first
+  if (playbackTimer) {
+    clearInterval(playbackTimer);
+    playbackTimer = null;
+  }
+
   const videoFrame = document.getElementById('video-frame');
   if (videoFrame) {
+    // Store the current src for potential restoration
+    const currentSrc = videoFrame.src;
+    
+    // Multiple methods to stop video playback
     videoFrame.style.display = 'none';
-    // Stop the video by clearing the src
-    videoFrame.src = '';
+    
+    // First, try to pause YouTube video via postMessage
+    try {
+      videoFrame.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      videoFrame.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+    } catch (e) {
+      console.log('Could not send pause command to YouTube iframe');
+    }
+    
+    // Then clear the src and force reload with empty content
+    videoFrame.src = 'about:blank';
+    
+    // Additional measure: remove and recreate iframe after a brief delay
+    setTimeout(() => {
+      if (videoFrame.parentNode) {
+        const newFrame = videoFrame.cloneNode(false);
+        newFrame.src = 'about:blank';
+        videoFrame.parentNode.replaceChild(newFrame, videoFrame);
+      }
+    }, 100);
   }
   
   // Create or update upgrade message
@@ -363,6 +425,9 @@ function hideUpgradeMessage() {
   if (upgradeMessage) {
     upgradeMessage.style.display = 'none';
   }
+  
+  // Reset timer flag when user upgrades or dismisses message
+  window.videoToolbarTimerExpired = false;
 }
 
 // Function to setup iframe message listener for video events
@@ -370,23 +435,31 @@ function setupVideoEventListeners() {
   const videoFrameEl = document.getElementById('video-frame');
   if (!videoFrameEl) return;
   
-  // Listen for iframe load
+  // Start timer when iframe loads with actual video content (but not on initial empty load)
   videoFrameEl.addEventListener('load', () => {
-    const autoplayCheckboxEl = document.getElementById('autoplay-checkbox');
-    // Only start timer if autoplay is checked AND there's actually a video URL AND it's not about:blank
-    if (autoplayCheckboxEl && autoplayCheckboxEl.checked && 
-        videoFrameEl.src && 
+    console.log('Video loaded, src:', videoFrameEl.src);
+    
+    // Check if this is a real video load with an actual video ID
+    if (videoFrameEl.src && 
         videoFrameEl.src !== '' && 
         videoFrameEl.src !== 'about:blank' &&
-        videoFrameEl.src.includes('youtube.com/embed/')) {
-      // Start timer after a brief delay to ensure video starts
+        videoFrameEl.src.includes('youtube.com/embed/') &&
+        videoFrameEl.src.includes('/embed/') &&
+        videoFrameEl.src.split('/embed/')[1] && 
+        videoFrameEl.src.split('/embed/')[1].length > 5) { // Ensure there's an actual video ID
+      
+      console.log('Valid YouTube video detected, starting timer in 1.5s');
+      // Start timer after a delay to allow video to start playing
       setTimeout(() => {
+        console.log('Starting timer for video:', videoFrameEl.src);
         startPlaybackTimer();
-      }, 2000);
+      }, 1500);
+    } else {
+      console.log('Skipping timer - not a valid YouTube video or empty iframe');
     }
   });
   
-  // Listen for user interaction on the document that might start video playback
+  // Also listen for user interaction as backup
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (target && target.closest('#video-frame')) {
@@ -396,8 +469,11 @@ function setupVideoEventListeners() {
           videoFrameEl.src && 
           videoFrameEl.src !== '' && 
           videoFrameEl.src !== 'about:blank' &&
-          videoFrameEl.src.includes('youtube.com/embed/')) {
-        // User clicked on video frame, assume playback started
+          videoFrameEl.src.includes('youtube.com/embed/') &&
+          videoFrameEl.src.split('/embed/')[1] && 
+          videoFrameEl.src.split('/embed/')[1].length > 5) {
+        // User clicked on video frame, ensure timer is started
+        console.log('User clicked video, starting timer');
         setTimeout(() => {
           startPlaybackTimer();
         }, 500);
@@ -449,9 +525,19 @@ function updateVideoAndLink() {
   if (videoFrameEl && 'src' in videoFrameEl) {
     if (embedUrl) {
       videoFrameEl.src = embedUrl;
+      // Reset and prepare timer when new video is loaded
+      resetPlaybackTimer();
+      // Start timer after short delay to allow autoplay to begin
+      setTimeout(() => {
+        if (!checkMembership() && videoTimeLimitMinutes !== -1) {
+          console.log('Starting timer from updateVideoAndLink for:', embedUrl);
+          startPlaybackTimer();
+        }
+      }, 2000); // 2 second delay to ensure video starts playing
     } else {
       // Clear the iframe if no video
       videoFrameEl.src = 'about:blank';
+      resetPlaybackTimer(); // Stop timer when no video
     }
   }
 
@@ -616,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <input type="checkbox" id="controls-checkbox" class="menu-checkbox" checked />
       </label>
       <label class="menu-label">Autoplay<br />
-        <input type="checkbox" id="autoplay-checkbox" class="menu-checkbox" checked />
+        <input type="checkbox" id="autoplay-checkbox" class="menu-checkbox" />
       </label>
       <label class="menu-label">Hide<br />
         <input type="checkbox" id="hide-menu-checkbox" class="menu-checkbox" />

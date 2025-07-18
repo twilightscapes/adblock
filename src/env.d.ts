@@ -8,7 +8,25 @@ declare module "@pagefind/default-ui" {
 	}
 }
 
-
+// Global window extensions for YouTube timer functions
+declare global {
+	interface Window {
+		resetYouTubeEmbedTimer?: (videoId: string) => void;
+		youtubeEmbedTimers?: Map<string, { reset: () => void; stop: () => void }>;
+		youtubePlayersMap?: Map<string, any>;
+		pendingYouTubePlayers?: Array<{ init: () => void }>;
+		onYouTubeIframeAPIReady?: () => void;
+		YT?: any;
+	}
+	
+	interface HTMLElement {
+		dataset: DOMStringMap;
+	}
+	
+	interface Element {
+		dataset: DOMStringMap;
+	}
+}
 
 interface ImportMeta {
 	readonly env: ImportMetaEnv;

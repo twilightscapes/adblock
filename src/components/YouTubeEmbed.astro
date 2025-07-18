@@ -56,7 +56,7 @@ const playerVars: { [key: string]: number | string } = {
 
 {useCustomPlayer ? (
   <div class="custom-youtube-player" style="display:flex; justify-content:center;">
-  <div id="youtube-player" style="width:100%; aspect-ratio:16/9;"></div>
+  <div id={`youtube-player-${videoId}`} style="width:100%; aspect-ratio:16/9;"></div>
     <div class="custom-controls">
       <div class="topblock"></div>
       
@@ -91,10 +91,10 @@ const playerVars: { [key: string]: number | string } = {
 ) : (
   <div class="iframe-youtube-player" style="position: relative; width: 100%; aspect-ratio: 16/9;">
     <iframe
-      id="youtube-iframe"
+      id={`youtube-iframe-${videoId}`}
       width="100%"
       height="100%"
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&amp;playsinline=1&amp;modestbranding=1&amp;rel=0&amp;showinfo=0&amp;fs=0&amp;endscreen=0`}
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&enablejsapi=1&playsinline=1&modestbranding=1&rel=0&showinfo=0&fs=0&endscreen=0`}
       title={title}
       frameborder="0"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -115,6 +115,7 @@ const playerVars: { [key: string]: number | string } = {
   let youtubeEmbedPlaybackTimer = null;
   let youtubeEmbedPlaybackStartTime = null;
   let youtubeEmbedElapsedTime = 0;
+  let timerExpired = false; // Flag to prevent timer loops
   const PLAYBACK_LIMIT_MS = Math.max(0, videoTimeLimitMinutes) * 60000; // Convert minutes to milliseconds, handle negative values
 
   // Membership system
@@ -157,25 +158,21 @@ const playerVars: { [key: string]: number | string } = {
     location.reload();
   }
 
-  function startPlaybackTimer() {
-    // Skip timer if user has membership
+    function startPlaybackTimer() {
+    // Don't start timer if it already expired
+    if (timerExpired) {
+      console.log('Timer already expired, not starting new timer');
+      showCompactUpgradeMessage();
+      return;
+    }
+    
     if (checkMembership()) {
+      console.log('User has membership, skipping timer');
+      // Don't show upgrade message for members
       return;
     }
     
-    // Skip timer if disabled (-1)
-    if (videoTimeLimitMinutes === -1) {
-      return;
-    }
-    
-    // Show immediate paywall if set to 0
-    if (videoTimeLimitMinutes === 0) {
-      // Show paywall immediately, no delay
-      setTimeout(() => {
-        showCompactUpgradeMessage();
-      }, 100); // Very short delay to ensure UI is ready
-      return;
-    }
+    console.log('Starting timer for', videoTimeLimitMinutes, 'minutes');
     
     if (youtubeEmbedPlaybackTimer) {
       clearTimeout(youtubeEmbedPlaybackTimer);
@@ -185,10 +182,13 @@ const playerVars: { [key: string]: number | string } = {
     const remainingTime = PLAYBACK_LIMIT_MS - youtubeEmbedElapsedTime;
     
     if (remainingTime > 0) {
+      console.log('Setting timer for', remainingTime, 'ms');
       youtubeEmbedPlaybackTimer = setTimeout(() => {
+        console.log('Timer expired for video:', videoId);
         showCompactUpgradeMessage();
       }, remainingTime);
     } else {
+      console.log('Timer already expired, showing upgrade message');
       showCompactUpgradeMessage();
     }
   }
@@ -208,6 +208,7 @@ const playerVars: { [key: string]: number | string } = {
     stopPlaybackTimer();
     youtubeEmbedElapsedTime = 0;
     youtubeEmbedPlaybackStartTime = null;
+    timerExpired = false; // Reset the flag
     if (youtubeEmbedPlaybackTimer) {
       clearTimeout(youtubeEmbedPlaybackTimer);
       youtubeEmbedPlaybackTimer = null;
@@ -215,38 +216,130 @@ const playerVars: { [key: string]: number | string } = {
     hideCompactUpgradeMessage();
   }
 
+  // Expose timer reset function globally for video switching
+  if (!window.youtubeEmbedTimers) {
+    window.youtubeEmbedTimers = new Map();
+  }
+  window.youtubeEmbedTimers.set(videoId, {
+    reset: resetPlaybackTimer,
+    stop: stopPlaybackTimer
+  });
+
+  // Global cleanup function
+  window.resetYouTubeEmbedTimer = function(targetVideoId) {
+    const timerFunctions = window.youtubeEmbedTimers?.get(targetVideoId);
+    if (timerFunctions) {
+      timerFunctions.reset();
+    }
+  };
+
   function showCompactUpgradeMessage() {
-    // Stop the video
-    if (player && player.pauseVideo) {
-      player.pauseVideo();
+    console.log('showCompactUpgradeMessage called for video:', videoId);
+    
+    // Set flag to prevent timer loops
+    timerExpired = true;
+    
+    // Stop any running timer
+    if (youtubeEmbedPlaybackTimer) {
+      clearTimeout(youtubeEmbedPlaybackTimer);
+      youtubeEmbedPlaybackTimer = null;
     }
     
-    // Find the parent container
-    const playerContainer = document.querySelector('.custom-youtube-player') || document.querySelector('iframe').parentElement;
-    if (!playerContainer) return;
+    // Stop the video completely but DON'T hide the video container
+    if (player && player.pauseVideo) {
+      console.log('Pausing YouTube player via API');
+      player.pauseVideo();
+      
+      // Also try to stop the video
+      if (player.stopVideo) {
+        player.stopVideo();
+      }
+    }
     
-    // Create or update compact upgrade message
-    let upgradeMessage = playerContainer.querySelector('.compact-upgrade-message');
+    // Find and stop iframe-based videos too
+    const iframe = document.getElementById(`youtube-iframe-${videoId}`);
+    if (iframe) {
+      console.log('Stopping iframe video');
+      
+      // Try to pause via postMessage
+      try {
+        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+      } catch (e) {
+        console.log('Could not send pause commands to iframe');
+      }
+      
+      // Create a black overlay to cover the video instead of hiding/removing iframe
+      let overlay = iframe.parentElement.querySelector('.video-blocked-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'video-blocked-overlay';
+        overlay.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: #000;
+          z-index: 999;
+          pointer-events: auto;
+        `;
+        iframe.parentElement.appendChild(overlay);
+      }
+      
+      // Make sure iframe is not interactive but keep it in DOM
+      iframe.style.pointerEvents = 'none';
+      console.log('Covered video with black overlay and disabled interaction');
+    }
+    
+    // Find the video container - use the immediate iframe parent for better positioning
+    let targetContainer = null;
+    
+    if (iframe && iframe.parentElement) {
+      targetContainer = iframe.parentElement;
+      console.log('Using direct iframe parent for upgrade message');
+    } else {
+      // Fallback to custom player container
+      const playerContainer = document.querySelector('.custom-youtube-player');
+      if (playerContainer) {
+        targetContainer = playerContainer;
+        console.log('Using custom player container for upgrade message');
+      }
+    }
+    
+    if (!targetContainer) {
+      console.log('Could not find container, using body fallback');
+      targetContainer = document.body;
+    }
+    
+    console.log('Creating upgrade message overlay for video:', videoId);
+    
+    // Create or update compact upgrade message with better positioning
+    let upgradeMessage = document.querySelector(`.compact-upgrade-message-${videoId}`);
     if (!upgradeMessage) {
       upgradeMessage = document.createElement('div');
-      upgradeMessage.className = 'compact-upgrade-message';
+      upgradeMessage.className = `compact-upgrade-message compact-upgrade-message-${videoId}`;
+      
+      // Always use absolute positioning within the video container
       upgradeMessage.style.cssText = `
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.9);
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 100;
+        z-index: 1000;
         text-align: center;
         padding: 10px;
         box-sizing: border-box;
+        border-radius: 4px;
       `;
-      playerContainer.appendChild(upgradeMessage);
+      targetContainer.appendChild(upgradeMessage);
+      console.log('Upgrade message added to container');
     }
     
     upgradeMessage.innerHTML = `
@@ -284,17 +377,71 @@ const playerVars: { [key: string]: number | string } = {
         window.location.href = '/video?upgrade=true';
       });
     }
+    
+    // Don't replace iframe as it might trigger container reset
+    // The src clearing and postMessage commands should be sufficient
+    console.log('Upgrade message setup complete for video:', videoId);
   }
 
   function hideCompactUpgradeMessage() {
-    const upgradeMessage = document.querySelector('.compact-upgrade-message');
-    if (upgradeMessage) {
-      upgradeMessage.remove();
+    // Reset timer flag when user upgrades
+    timerExpired = false;
+    
+    // Remove both generic and video-specific upgrade messages
+    const genericMessage = document.querySelector('.compact-upgrade-message');
+    if (genericMessage) {
+      genericMessage.remove();
+    }
+    
+    const specificMessage = document.querySelector(`.compact-upgrade-message-${videoId}`);
+    if (specificMessage) {
+      specificMessage.remove();
+    }
+    
+    // Restore iframe when hiding upgrade message
+    const iframe = document.getElementById(`youtube-iframe-${videoId}`);
+    if (iframe) {
+      // Remove the black overlay
+      const overlay = iframe.parentElement.querySelector('.video-blocked-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+      
+      // Restore iframe interaction
+      iframe.style.pointerEvents = 'auto';
+      
+      console.log('Removed overlay and restored iframe interaction for video:', videoId);
     }
   }
 
-  window.onYouTubeIframeAPIReady = function() {
-    player = new YT.Player('youtube-player', {
+  // Global function for when YouTube API is ready
+  if (!window.onYouTubeIframeAPIReady) {
+    window.onYouTubeIframeAPIReady = function() {
+      // Initialize all pending players
+      if (window.pendingYouTubePlayers) {
+        window.pendingYouTubePlayers.forEach(playerConfig => {
+          playerConfig.init();
+        });
+        window.pendingYouTubePlayers = [];
+      }
+    };
+  }
+
+  // Function to initialize this specific player
+  function initializePlayer() {
+    // Only initialize if the player container is visible
+    const playerContainer = document.getElementById(`youtube-player-${videoId}`);
+    if (!playerContainer || playerContainer.offsetParent === null) {
+      // Container is not visible, don't initialize yet
+      return;
+    }
+    
+    // If player already exists, destroy it first
+    if (player && player.destroy) {
+      player.destroy();
+    }
+    
+    player = new YT.Player(`youtube-player-${videoId}`, {
       height: '100%',
       width: '100%',
       videoId: videoId,
@@ -303,6 +450,24 @@ const playerVars: { [key: string]: number | string } = {
         'onReady': onPlayerReady,
       }
     });
+    
+    // Store this player instance globally for cleanup
+    if (!window.youtubePlayersMap) {
+      window.youtubePlayersMap = new Map();
+    }
+    window.youtubePlayersMap.set(videoId, player);
+  }
+
+  // Check if YouTube API is already loaded
+  if (window.YT && window.YT.Player) {
+    // API is loaded, initialize immediately if visible
+    initializePlayer();
+  } else {
+    // API not loaded yet, add to pending list
+    if (!window.pendingYouTubePlayers) {
+      window.pendingYouTubePlayers = [];
+    }
+    window.pendingYouTubePlayers.push({ init: initializePlayer });
   }
 
   function showControls() {
@@ -534,27 +699,37 @@ const playerVars: { [key: string]: number | string } = {
 
   // For iframe version, add timer functionality
   function setupIframeTimer() {
-    const iframe = document.getElementById('youtube-iframe');
+    const iframe = document.getElementById(`youtube-iframe-${videoId}`);
     if (iframe) {
       // Reset timer when iframe loads (new video)
       iframe.addEventListener('load', () => {
         resetPlaybackTimer(); // Reset timer for new video
+        console.log('YouTube iframe loaded for video:', videoId);
+        
+        // Start timer after a short delay to detect if video is actually playing
+        // This helps catch autoplay scenarios
         setTimeout(() => {
           if (!checkMembership() && videoTimeLimitMinutes !== -1) {
-            startPlaybackTimer();
+            // Check if iframe src indicates a valid video (not about:blank)
+            if (iframe.src && 
+                iframe.src !== 'about:blank' && 
+                iframe.src.includes('youtube.com/embed/')) {
+              console.log('Starting timer for iframe video:', videoId);
+              startPlaybackTimer();
+            }
           }
-        }, 2000); // Delay to ensure video starts
+        }, 1000); // Delay to allow video to start
       });
       
-      // Add click handler to iframe container for interaction-based timer
+      // Also add click handler for manual interaction
       const iframeContainer = iframe.parentElement;
       if (iframeContainer) {
         iframeContainer.addEventListener('click', () => {
           if (!checkMembership() && videoTimeLimitMinutes !== -1) {
-            // Always reset timer state when user clicks to ensure fresh start
+            // Reset and start timer on click
             resetPlaybackTimer();
-            
             setTimeout(() => {
+              console.log('Starting timer from click for video:', videoId);
               startPlaybackTimer();
             }, 500);
           }
@@ -564,7 +739,7 @@ const playerVars: { [key: string]: number | string } = {
   }
 
   // Initialize iframe timer if not using custom player
-  if (document.getElementById('youtube-iframe')) {
+  if (document.getElementById(`youtube-iframe-${videoId}`)) {
     setupIframeTimer();
   }
 
@@ -607,55 +782,90 @@ const playerVars: { [key: string]: number | string } = {
     }
   });
 
-  // Listen for stop all videos event
-  document.addEventListener('stopAllVideos', () => {
-    // Stop this instance's timer
-    stopPlaybackTimer();
-    
-    // Stop custom player if it exists
-    if (player && player.pauseVideo) {
-      player.pauseVideo();
+  // Listen for initialization events
+  document.addEventListener('initializeYouTubePlayer', (event) => {
+    const targetVideoId = event.detail?.videoId;
+    if (targetVideoId === videoId && !player) {
+      // This video should be initialized and doesn't have a player yet
+      initializePlayer();
     }
+  });
+
+  // Listen for stop all videos event
+  document.addEventListener('stopAllVideos', (event) => {
+    const activeContainer = event.detail?.activeContainer;
     
-    // For iframe version, the PostPreview already set src to about:blank
-    // We don't need to do anything else as the video will be reloaded when clicked again
-    
-    // Reset timer state for this instance
-    youtubeEmbedElapsedTime = 0;
-    youtubeEmbedPlaybackStartTime = null;
-    
-    // Hide any upgrade messages
-    hideCompactUpgradeMessage();
+    // Only stop this video if it's not the active one being clicked
+    const thisContainer = document.querySelector(`[data-video-id="${videoId}"]`);
+    if (activeContainer !== thisContainer) {
+      // Stop this instance's timer
+      stopPlaybackTimer();
+      
+      // Stop custom player if it exists
+      if (player && player.pauseVideo) {
+        player.pauseVideo();
+        player.stopVideo();
+      }
+      
+      // Also try to stop via global player map
+      if (window.youtubePlayersMap && window.youtubePlayersMap.has(videoId)) {
+        const globalPlayer = window.youtubePlayersMap.get(videoId);
+        if (globalPlayer && globalPlayer.pauseVideo) {
+          globalPlayer.pauseVideo();
+          globalPlayer.stopVideo();
+        }
+      }
+      
+      // For iframe version, clear the src to fully stop the video
+      const iframe = document.getElementById(`youtube-iframe-${videoId}`);
+      if (iframe) {
+        iframe.src = 'about:blank';
+      }
+      
+      // Reset timer state for this instance
+      youtubeEmbedElapsedTime = 0;
+      youtubeEmbedPlaybackStartTime = null;
+      
+      // Hide any upgrade messages
+      hideCompactUpgradeMessage();
+    }
   });
 
   // Listen for custom reset timer events from PostPreview component
-  document.addEventListener('resetVideoTimer', () => {
-    // This event fires when a video is about to start
-    // First ensure the iframe src is properly set (in case it was cleared)
-    const iframe = document.getElementById('youtube-iframe');
-    if (iframe && videoId) {
-      const expectedSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&playsinline=1&modestbranding=1&rel=0&showinfo=0&fs=0&endscreen=0`;
-      if (iframe.src !== expectedSrc) {
-        iframe.src = expectedSrc;
+  document.addEventListener('resetVideoTimer', (event) => {
+    const targetVideoId = event.detail?.videoId;
+    
+    // Only handle the reset if it's for this specific video instance or if no specific video is targeted
+    if (!targetVideoId || targetVideoId === videoId) {
+      // First ensure the iframe src is properly set (in case it was cleared)
+      const iframe = document.getElementById(`youtube-iframe-${videoId}`);
+      if (iframe && videoId) {
+        const expectedSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&playsinline=1&modestbranding=1&rel=0&showinfo=0&fs=0&endscreen=0`;
+        if (iframe.src !== expectedSrc) {
+          iframe.src = expectedSrc;
+        }
       }
-    }
-    
-    resetPlaybackTimer();
-    
-    // Start timer immediately when video becomes visible (unless disabled or premium)
-    if (!checkMembership() && videoTimeLimitMinutes !== -1) {
-      // Small delay to ensure the video embed is ready
-      setTimeout(() => {
-        startPlaybackTimer();
-      }, 500);
+      
+      resetPlaybackTimer();
+      
+      // Start timer immediately when video becomes visible (unless disabled or premium)
+      if (!checkMembership() && videoTimeLimitMinutes !== -1) {
+        // Small delay to ensure the video embed is ready
+        setTimeout(() => {
+          startPlaybackTimer();
+        }, 500);
+      }
     }
   });
 
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  const firstScriptTag = document.getElementsByTagName('script')[0];
-  if (firstScriptTag.parentNode) {
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  // Load YouTube API script if not already loaded
+  if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    if (firstScriptTag.parentNode) {
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
   }
 </script>
 <style>

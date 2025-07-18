@@ -262,7 +262,18 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
       e.stopPropagation();
       
       if (thumbnail && youtubeEmbed) {
-        // First, stop all other videos and reset them to thumbnail view
+        // Simple approach: just show this video and hide its thumbnail
+        thumbnail.style.display = 'none';
+        playButton.style.display = 'none';
+        youtubeEmbed.style.display = 'block';
+        
+        // Restore iframe src if it was cleared
+        const iframe = youtubeEmbed.querySelector('iframe');
+        if (iframe && iframe.src === 'about:blank' && iframe.dataset.originalSrc) {
+          iframe.src = iframe.dataset.originalSrc;
+        }
+        
+        // Stop ALL other videos (simple approach)
         document.querySelectorAll('.video-container').forEach(otherContainer => {
           if (otherContainer !== container) {
             const otherThumbnail = otherContainer.querySelector('.video-thumbnail') as HTMLElement;
@@ -270,33 +281,48 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
             const otherYoutubeEmbed = otherContainer.querySelector('.youtube-embed') as HTMLElement;
             
             if (otherThumbnail && otherPlayButton && otherYoutubeEmbed) {
-              // Stop the video by clearing iframe src or stopping custom player
-              const otherIframe = otherYoutubeEmbed.querySelector('iframe');
-              if (otherIframe) {
-                otherIframe.src = 'about:blank'; // This stops the video and audio
-              }
-              
-              // Reset to thumbnail view
+              // Reset other videos to thumbnail
               otherThumbnail.style.display = 'block';
               otherPlayButton.style.display = 'block';
               otherYoutubeEmbed.style.display = 'none';
+              
+              // Clean up any existing upgrade messages (both types)
+              const upgradeMessage = otherYoutubeEmbed.querySelector('.compact-upgrade-message');
+              if (upgradeMessage) {
+                upgradeMessage.remove();
+              }
+              
+              // Also clean up any video-specific upgrade messages that might be in body
+              const videoId = (otherContainer as HTMLElement).dataset.videoId;
+              if (videoId) {
+                const specificMessage = document.querySelector(`.compact-upgrade-message-${videoId}`);
+                if (specificMessage) {
+                  specificMessage.remove();
+                }
+              }
+              
+              // Stop the iframe and clean up timers
+              const otherIframe = otherYoutubeEmbed.querySelector('iframe');
+              if (otherIframe) {
+                // Store original src before clearing
+                if (otherIframe.src !== 'about:blank') {
+                  (otherIframe as HTMLIFrameElement).dataset.originalSrc = otherIframe.src;
+                }
+                otherIframe.src = 'about:blank';
+                
+                // Try to call the timer cleanup function for this video if it exists
+                const videoId = (otherContainer as HTMLElement).dataset.videoId;
+                if (videoId && (window as any).resetYouTubeEmbedTimer) {
+                  try {
+                    (window as any).resetYouTubeEmbedTimer(videoId);
+                  } catch (e) {
+                    console.log('Could not reset timer for video:', videoId);
+                  }
+                }
+              }
             }
           }
         });
-        
-        // Dispatch stop event for other videos
-        const stopEvent = new CustomEvent('stopAllVideos');
-        document.dispatchEvent(stopEvent);
-        
-        // Then start the clicked video
-        thumbnail.style.display = 'none';
-        playButton.style.display = 'none';
-        youtubeEmbed.style.display = 'block';
-        
-        // Reset timer when switching from thumbnail to video
-        // This dispatches a custom event that the YouTubeEmbed can listen for
-        const resetEvent = new CustomEvent('resetVideoTimer');
-        document.dispatchEvent(resetEvent);
       }
     });
   });
