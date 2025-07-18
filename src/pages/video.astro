@@ -1,13 +1,11 @@
 ---
-import VideoLayout from "@/layouts/VideoLayout.astro";
 import { getEntry } from 'astro:content';
 
 // Get site settings for video time limit
 const siteSettings = await getEntry('siteSettings', 'main');
 const videoTimeLimitMinutes = siteSettings?.data?.videoTimeLimitMinutes ?? 1;
 ---
-
-<VideoLayout title="AdBlock Video - Free YouTube Ad Blocker">
+<html lang="en">
 <style>
 html{overflow-x: hidden;}
 
@@ -584,4 +582,4 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <iframe title="AdBlocked Video" id="video-frame" allow="autoplay; fullscreen"></iframe>
-</VideoLayout>
+</html>
