@@ -1,10 +1,7 @@
 sectionOrdering:
-  - feature
-  - app
   - posts
   - infoblock3
 featureImage:
-  src: /images/homepage/featureImage/src.webp
   alt: Paste YouTube Url Here
 youtube:
   discriminant: false
