@@ -1,0 +1,20 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = "AdBlock Video" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content="Free YouTube Ad Blocker - Remove ads from YouTube videos" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
