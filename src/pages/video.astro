@@ -1,11 +1,12 @@
 ---
+import PageLayout from "@/layouts/Base.astro";
 import { getEntry } from 'astro:content';
 
 // Get site settings for video time limit
 const siteSettings = await getEntry('siteSettings', 'main');
 const videoTimeLimitMinutes = siteSettings?.data?.videoTimeLimitMinutes ?? 1;
 ---
-<html lang="en">
+<PageLayout title="Thank You" description="Thank you for contacting us" themeMode="user">
 <style>
 html{overflow-x: hidden;}
 
@@ -14,7 +15,7 @@ font-size: 16px !important;
 }
 
   #menu-bar {
-    position: absolute;
+    position: relative;
     width: 100vw;
     z-index: 10;
     top:0;
@@ -50,9 +51,9 @@ width: 70px;
 }
 
   #video-frame {
-    position: absolute;
-    top: 54px; left: 0;
-    width: 100vw; height: 90vh;
+    position: relative;
+    top: -; left: 0;
+    width: 100vw; height: 88vh;
     border: none;
     z-index: 1;
   }
@@ -89,6 +90,8 @@ width: 70px;
     background: rgba(255, 193, 7, 0.9);
     color: #333;
   }
+
+  
 </style>
 
 <script define:vars={{ videoTimeLimitMinutes }}>
@@ -540,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
-
+<div class="video">
 <div id="menu-bar">
   <div id="bigbox" style="display: flex;">
     <div id="timers" style="display: flex; flex-direction:row; gap: 10px; align-items: center; width:100%; padding:0 10px 0 5px;">
@@ -583,4 +586,8 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <iframe title="AdBlocked Video" id="video-frame" allow="autoplay; fullscreen"></iframe>
-</html>
+
+</div>
+
+
+</PageLayout>

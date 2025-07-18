@@ -511,7 +511,7 @@ button.topper{background:var(--theme-header) !important;}
 
 	  body:has(#homemap) {overflow-y:auto !important;}
 
-
+body:has(.video) #missioncontrol{display: none !important;}
 	  /* body:has(.home) #footer{display: none;} */
 
 	  #footer{padding-bottom: 80px;}
