@@ -233,7 +233,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        z-index: 10;
+        z-index: 2;
         filter: drop-shadow(0px 0px 1px #f6f3f3) !important;
         box-shadow: 0 0 0 3px #111;
     }
@@ -258,6 +258,224 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     } */
 </style>
 <script>
+  <script>
+// Enhanced video cleanup and management
+(function() {
+  'use strict';
+  
+  // Global function to stop all videos
+  function stopAllVideos(excludeContainer?: Element | null) {
+    console.log('Stopping all videos...');
+    
+    document.querySelectorAll('.video-container').forEach(container => {
+      if (container === excludeContainer) return;
+      
+      const thumbnail = container.querySelector('.video-thumbnail') as HTMLElement;
+      const playButton = container.querySelector('.play-button') as HTMLElement;
+      const youtubeEmbed = container.querySelector('.youtube-embed') as HTMLElement;
+      
+      if (thumbnail && playButton && youtubeEmbed) {
+        // Reset to thumbnail state
+        thumbnail.style.display = 'block';
+        playButton.style.display = 'block';
+        youtubeEmbed.style.display = 'none';
+        
+        // Stop the iframe and clean up timers
+        const iframe = youtubeEmbed.querySelector('iframe');
+        if (iframe) {
+          // Store original src before clearing
+          if (iframe.src !== 'about:blank') {
+            (iframe as HTMLIFrameElement).dataset.originalSrc = iframe.src;
+          }
+          iframe.src = 'about:blank';
+          
+          // Try to call the timer cleanup function for this video if it exists
+          const videoId = (container as HTMLElement).dataset.videoId;
+          if (videoId && (window as any).resetYouTubeEmbedTimer) {
+            try {
+              (window as any).resetYouTubeEmbedTimer(videoId);
+            } catch (e) {
+              console.log('Could not reset timer for video:', videoId);
+            }
+          }
+        }
+        
+        // Clean up any upgrade messages
+        const upgradeMessage = youtubeEmbed.querySelector('.compact-upgrade-message');
+        if (upgradeMessage) {
+          upgradeMessage.remove();
+        }
+        
+        const videoId = (container as HTMLElement).dataset.videoId;
+        if (videoId) {
+          const specificMessage = document.querySelector(`.compact-upgrade-message-${videoId}`);
+          if (specificMessage) {
+            specificMessage.remove();
+          }
+        }
+      }
+    });
+  }
+  
+  // Make stopAllVideos globally available
+  (window as any).stopAllVideos = stopAllVideos;
+  
+  // Stop all videos immediately when script loads (before any can start playing)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      // Small delay to ensure all video containers are rendered
+      setTimeout(() => {
+        stopAllVideos();
+      }, 50);
+    });
+  } else {
+    // Document is already loaded
+    setTimeout(() => {
+      stopAllVideos();
+    }, 50);
+  }
+  
+  // Enhanced navigation detection
+  let isNavigatingAway = false;
+  
+  // Detect various navigation scenarios
+  window.addEventListener('beforeunload', () => {
+    isNavigatingAway = true;
+    stopAllVideos();
+  });
+  
+  // Handle view transitions
+  document.addEventListener('astro:before-preparation', () => {
+    isNavigatingAway = true;
+    stopAllVideos();
+  });
+  
+  document.addEventListener('astro:before-swap', () => {
+    stopAllVideos();
+  });
+  
+  // Handle back/forward navigation
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      // Page was loaded from cache, stop all videos
+      setTimeout(() => {
+        stopAllVideos();
+      }, 50);
+    }
+  });
+  
+  // Handle visibility changes (tab switching, etc.)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopAllVideos();
+    }
+  });
+  
+  // Set up video click handlers when DOM is ready
+  function setupVideoHandlers() {
+    document.querySelectorAll('.video-container').forEach(container => {
+      const playButton = container.querySelector('.play-button') as HTMLElement;
+      const thumbnail = container.querySelector('.video-thumbnail') as HTMLElement;
+      const youtubeEmbed = container.querySelector('.youtube-embed') as HTMLElement;
+
+      // Remove any existing click handlers to prevent duplicates
+      const newPlayButton = playButton?.cloneNode(true) as HTMLElement;
+      playButton?.parentNode?.replaceChild(newPlayButton, playButton);
+
+      newPlayButton?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (thumbnail && youtubeEmbed) {
+          // Stop all other videos first
+          stopAllVideos(container);
+          
+          // Then play this video
+          thumbnail.style.display = 'none';
+          newPlayButton.style.display = 'none';
+          youtubeEmbed.style.display = 'block';
+          
+          // Restore iframe src if it was cleared
+          const iframe = youtubeEmbed.querySelector('iframe');
+          if (iframe && iframe.src === 'about:blank' && iframe.dataset.originalSrc) {
+            iframe.src = iframe.dataset.originalSrc;
+          }
+        }
+      });
+    });
+  }
+  
+  // Set up handlers when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupVideoHandlers);
+  } else {
+    setupVideoHandlers();
+  }
+  
+  // Also set up handlers after any dynamic content changes
+  const observer = new MutationObserver((mutations) => {
+    let shouldSetupHandlers = false;
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.querySelector('.video-container') || element.classList.contains('video-container')) {
+              shouldSetupHandlers = true;
+            }
+          }
+        });
+      }
+    });
+    
+    if (shouldSetupHandlers) {
+      setTimeout(() => {
+        stopAllVideos();
+        setupVideoHandlers();
+      }, 100);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+})();
+
+  // Stop all videos when page becomes hidden (user navigates away)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopAllVideos();
+    }
+  });
+
+  // Stop all videos before page unloads
+  window.addEventListener('beforeunload', () => {
+    stopAllVideos();
+  });
+
+  // Stop all videos when page is about to be hidden (for view transitions)
+  document.addEventListener('astro:before-preparation', () => {
+    stopAllVideos();
+  });
+
+  // Also stop videos on pagehide event (for mobile browsers)
+  window.addEventListener('pagehide', () => {
+    stopAllVideos();
+  });
+
+  // Stop videos when user clicks on navigation links
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'A' || target.closest('a')) {
+      // User is navigating away, stop videos
+      setTimeout(() => {
+        stopAllVideos();
+      }, 100);
+    }
+  });
+
   document.querySelectorAll('.video-container').forEach(container => {
     const playButton = container.querySelector('.play-button') as HTMLElement;
     const thumbnail = container.querySelector('.video-thumbnail') as HTMLElement;

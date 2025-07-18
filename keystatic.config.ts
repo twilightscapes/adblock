@@ -454,6 +454,7 @@ export default config({
             options: [
               { label: 'Feature Section', value: 'feature' },
               { label: 'Bio Section', value: 'bio' },
+              { label: 'YouTube Form Section', value: 'youform' },
               { label: 'Map/Video Section', value: 'app' },
               { label: 'Gallery Section', value: 'gallery' },
               { label: 'Posts Section', value: 'posts' },
@@ -559,6 +560,30 @@ export default config({
         
         divider5: fields.empty(),
         
+        // ====== YOUTUBE FORM SECTION SETTINGS ======
+        youformTitle: fields.text({ 
+          label: 'Form Title',
+          description: 'The main heading displayed above the YouTube form',
+          defaultValue: 'YouTube Video Processor'
+        }),
+        youformDescription: fields.text({ 
+          label: 'Form Description',
+          description: 'Descriptive text shown below the title',
+          defaultValue: 'Paste any YouTube URL to remove ads and get enhanced controls',
+          multiline: true
+        }),
+        youformPlaceholder: fields.text({ 
+          label: 'Input Placeholder Text',
+          description: 'Placeholder text shown inside the URL input field',
+          defaultValue: 'Paste YouTube URL here...'
+        }),
+        youformShowTitle: fields.checkbox({
+          label: 'Show Title & Description',
+          description: 'Toggle to show/hide the form title and description text',
+          defaultValue: true
+        }),
+        
+        divider6: fields.empty(),
         
         photosectiontitle: fields.text({ label: 'Photo Section Title Header'  }),
         locationtitle: fields.text({ label: 'Location Map Title Header'  }),

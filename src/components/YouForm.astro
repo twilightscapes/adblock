@@ -1,0 +1,485 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  placeholder?: string;
+  showTitle?: boolean;
+}
+
+const { 
+  title = "", 
+  description = "Paste any YouTube URL to remove ads and get enhanced controls",
+  placeholder = "Paste YouTube URL here...",
+  showTitle = true 
+} = Astro.props;
+
+// Debug log to see what props are being passed
+console.log('YouForm Props received:', { title, description, placeholder, showTitle });
+---
+
+<style>
+  .you-form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    min-height: 40vh;
+  }
+
+  .you-form-title {
+    font-size: clamp(2.5rem, 3vw, 4rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, var(--theme-accent), var(--theme-accent-2, #af514c), #FF6B6B);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    letter-spacing: -0.02em;
+    animation: titleGlow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes titleGlow {
+    from {
+      filter: drop-shadow(0 0 10px rgba(76, 175, 80, 0.3));
+    }
+    to {
+      filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.6));
+    }
+  }
+
+  .you-form-description {
+    font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+    margin-bottom: 3rem;
+    opacity: 0.9;
+    max-width: 700px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .you-form-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 2rem;
+    animation: formFloat 6s ease-in-out infinite;
+  }
+
+  @keyframes formFloat {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  .you-form-input {
+    width: 100%;
+    padding: 1.5rem 2rem;
+    font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+    border: 3px solid var(--theme-ui-colors-siteColor, #4CAF50);
+    border-radius: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    color: var(--theme-text, #fff);
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    font-weight: 400;
+  }
+
+  .you-form-input:focus {
+    border-color: var(--theme-accent, #4CAF50);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 0 0 4px rgba(76, 175, 80, 0.3),
+      0 16px 40px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px) scale(1.02);
+  }
+
+  .you-form-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    font-weight: 300;
+  }
+
+  .you-form-input:focus::placeholder {
+    opacity: 0.3;
+    transform: translateY(-2px);
+  }
+
+  .clipboard-button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(45deg, var(--theme-accent, #4caf53), #45a06b);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 4px 12px rgba(76, 175, 80, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+  }
+
+  .clipboard-button:hover {
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 
+      0 6px 20px rgba(76, 175, 80, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  .clipboard-button:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  .status-message {
+    margin-top: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transform: translateY(-15px) scale(0.9);
+    backdrop-filter: blur(10px);
+  }
+
+  .status-message.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .status-message.success {
+    background: linear-gradient(45deg, rgba(76, 175, 80, 0.2), rgba(129, 199, 132, 0.2));
+    color: #4CAF50;
+    border: 2px solid rgba(76, 175, 80, 0.4);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+  }
+
+  .status-message.error {
+    background: linear-gradient(45deg, rgba(244, 67, 54, 0.2), rgba(239, 83, 80, 0.2));
+    color: #f44336;
+    border: 2px solid rgba(244, 67, 54, 0.4);
+    box-shadow: 0 8px 25px rgba(244, 67, 54, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    .you-form-container {
+      padding: 2rem 1rem;
+      min-height: 30vh;
+    }
+    
+    .you-form-input {
+      padding: 1.2rem 1.5rem;
+      padding-right: 1.5rem;
+    }
+    
+    .clipboard-button {
+      position: static;
+      transform: none;
+      margin-top: 1rem;
+      width: 100%;
+      padding: 1rem 1.5rem;
+    }
+    
+    .you-form-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  /* Add some fun hover effects */
+  .you-form-container:hover .you-form-title {
+    animation-duration: 1.5s;
+  }
+
+  /* Loading animation for when URL is being processed */
+  .you-form-input.processing {
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(76, 175, 80, 0.1) 50%, 
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+</style>
+
+<div class="you-form-container">
+  {showTitle && (
+    <>
+      <h2 class="you-form-title">{title}</h2>
+      <p class="you-form-description">{description}</p>
+    </>
+  )}
+  
+  <form id="youtube-form" class="you-form-wrapper" action="/video" method="GET">
+    <input 
+      type="text" 
+      id="youtube-input" 
+      name="video"
+      class="you-form-input" 
+      placeholder={placeholder}
+      aria-label="YouTube URL Input"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button type="button" id="clipboard-btn" class="clipboard-button">
+      📋 Paste
+    </button>
+  </form>
+
+  <div id="status-message" class="status-message"></div>
+</div>
+
+<script>
+// Utility: Extract YouTube video ID from URL or ID
+function extractVideoId(input) {
+  if (!input) return null;
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+  let match = input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+  match = input.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+  match = input.match(/\/(embed|v)\/([a-zA-Z0-9_-]{11})/);
+  if (match) return match[2];
+  match = input.match(/([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+  return null;
+}
+
+function showStatusMessage(message, type = 'success') {
+  const statusEl = document.getElementById('status-message');
+  if (!statusEl) return;
+  
+  statusEl.textContent = message;
+  statusEl.className = `status-message ${type} show`;
+  
+  setTimeout(() => {
+    statusEl.classList.remove('show');
+  }, 3000);
+}
+
+function validateYouTubeUrl(url) {
+  const videoId = extractVideoId(url);
+  return videoId !== null;
+}
+
+async function handleClipboardPaste() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const input = document.getElementById('youtube-input') as HTMLInputElement;
+    
+    if (!input) return;
+    
+    if (text && validateYouTubeUrl(text)) {
+      input.value = text;
+      input.classList.add('processing');
+      showStatusMessage('✅ YouTube URL detected! Loading...');
+      
+      // Submit immediately without delay
+      setTimeout(() => {
+        const form = document.getElementById('youtube-form') as HTMLFormElement;
+        if (document.startViewTransition) {
+          document.startViewTransition(() => {
+            form?.submit();
+          });
+        } else {
+          form?.submit();
+        }
+      }, 300);
+    } else if (text) {
+      input.value = text;
+      showStatusMessage('⚠️ Please enter a valid YouTube URL', 'error');
+    } else {
+      showStatusMessage('📋 Clipboard is empty', 'error');
+    }
+  } catch (err) {
+    showStatusMessage('❌ Unable to access clipboard', 'error');
+    console.warn('Clipboard access failed:', err);
+  }
+}
+
+// Auto-detect clipboard content on page load
+async function autoDetectClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text && validateYouTubeUrl(text)) {
+      const input = document.getElementById('youtube-input') as HTMLInputElement;
+      if (input && !input.value) {
+        input.placeholder = '🎬 YouTube URL detected in clipboard - click Paste';
+        
+        // Add a subtle animation to draw attention
+        input.style.borderColor = 'rgba(76, 175, 80, 0.8)';
+        input.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.3)';
+        
+        setTimeout(() => {
+          input.style.borderColor = '';
+          input.style.boxShadow = '';
+        }, 2000);
+      }
+    }
+  } catch (err) {
+    // Clipboard access failed, ignore silently
+  }
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+  const clipboardBtn = document.getElementById('clipboard-btn');
+  const form = document.getElementById('youtube-form') as HTMLFormElement;
+  const input = document.getElementById('youtube-input') as HTMLInputElement;
+
+  if (clipboardBtn) {
+    clipboardBtn.addEventListener('click', handleClipboardPaste);
+  }
+
+  if (form && input) {
+    // Handle form submission
+    form.addEventListener('submit', (e) => {
+      console.log('Form submit event triggered');
+      console.log('Form action:', form.action);
+      console.log('Form method:', form.method);
+      console.log('Form elements:', form.elements);
+      
+      const url = input.value.trim();
+      console.log('Input value:', url);
+      console.log('Input name:', input.name);
+      
+      // Log all form data
+      const formData = new FormData(form);
+      for (let [key, value] of formData.entries()) {
+        console.log(`Form data - ${key}: ${value}`);
+      }
+      
+      if (!url) {
+        e.preventDefault();
+        showStatusMessage('Please enter a YouTube URL', 'error');
+        return;
+      }
+      
+      if (!validateYouTubeUrl(url)) {
+        e.preventDefault();
+        showStatusMessage('Please enter a valid YouTube URL', 'error');
+        return;
+      }
+      
+      // Add processing animation
+      input.classList.add('processing');
+      showStatusMessage('🚀 Loading your ad-free video...');
+      
+      // Use view transitions for smooth navigation
+      if (document.startViewTransition) {
+        e.preventDefault();
+        console.log('Using view transition');
+        document.startViewTransition(() => {
+          const submitUrl = `${form.action}?video=${encodeURIComponent(url)}`;
+          console.log('Navigating to:', submitUrl);
+          window.location.href = submitUrl;
+        });
+      } else {
+        // Fallback for browsers without view transitions
+        console.log('Form will submit naturally with URL:', url);
+        console.log('Expected final URL:', `${form.action}?video=${encodeURIComponent(url)}`);
+      }
+    });
+
+        // Debounce function for input handling
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Helper function to show status messages
+    function showStatusMessage(message, type = 'success') {
+      const statusDiv = document.querySelector('.status-message') as HTMLElement;
+      if (statusDiv) {
+        statusDiv.textContent = message;
+        statusDiv.className = `status-message ${type}`;
+        statusDiv.style.display = 'block';
+      }
+    }
+
+    // Helper function to hide status messages
+    function hideStatusMessage() {
+      const statusDiv = document.querySelector('.status-message') as HTMLElement;
+      if (statusDiv) {
+        statusDiv.style.display = 'none';
+      }
+    }
+
+    // Handle input changes for URL validation and auto-detection
+    input.addEventListener('input', debounce((e) => {
+      console.log('Input changed:', e.target.value);
+      const url = e.target.value.trim();
+      
+      if (url && validateYouTubeUrl(url)) {
+        showStatusMessage('✅ Valid YouTube URL detected - Auto-submitting...');
+        // Auto-submit with smooth timing
+        setTimeout(() => {
+          console.log('Auto-submitting form');
+          form.submit();
+        }, 1000); // Give user time to see the success message
+      } else if (url) {
+        showStatusMessage('❌ Please enter a valid YouTube URL', 'error');
+      } else {
+        hideStatusMessage();
+      }
+    }, 300));
+
+    // Handle Enter key for quick submission
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+  }
+
+  // Auto-detect clipboard content
+  autoDetectClipboard();
+});
+
+// Re-check clipboard when page becomes visible
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    autoDetectClipboard();
+  }
+});
+</script>
+

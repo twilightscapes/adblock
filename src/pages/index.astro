@@ -13,6 +13,7 @@ import CTAs from '@/components/CTAs.astro';
 import App from "@/components/App.astro";
 import InfoBlock from "@/components/InfoBlock.astro";
 import Resume from '@/components/Resume.astro';
+import YouForm from '@/components/YouForm.astro';
 
 
 
@@ -154,6 +155,8 @@ type Section = {
 
 const sections: Section[] = (homeData.sectionOrdering || []).map((sectionName: string, index: number) => {
   switch (sectionName) {
+    case 'youform':
+      return { name: 'youform', show: true, order: index, component: YouForm };
     case 'feature':
       return { name: 'feature', show: true, order: index, component: Feature };
     case 'bio':
@@ -268,6 +271,15 @@ flex-direction: column;
               }} />;
 						case 'bio':
 							return <Bio />;
+						case 'youform':
+							return (
+								<YouForm 
+									title={homepageData?.youformTitle || ""}
+									description={homepageData?.youformDescription || "Paste any YouTube URL to remove ads and get enhanced controls"}
+									placeholder={homepageData?.youformPlaceholder || "Paste YouTube URL here..."}
+									showTitle={homepageData?.youformShowTitle ?? true}
+								/>
+							);
 						case 'app':
 							return (<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style="margin-bottom:0;">{homeData.locationtitle}</h2><App />);
 						case 'gallery':

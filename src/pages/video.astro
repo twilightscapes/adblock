@@ -6,7 +6,7 @@ import { getEntry } from 'astro:content';
 const siteSettings = await getEntry('siteSettings', 'main');
 const videoTimeLimitMinutes = siteSettings?.data?.videoTimeLimitMinutes ?? 1;
 ---
-<PageLayout title="Thank You" description="Thank you for contacting us" themeMode="user">
+<PageLayout title="AdBlocked YouTube Player" description="Watch YouTube videos without ads and with enhanced controls" themeMode="user">
 <style>
 html{overflow-x: hidden; overflow-y: hidden;}
 

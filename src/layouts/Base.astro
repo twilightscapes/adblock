@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer.astro";
 import Header from "@/components/layout/Header.astro";
 import { siteConfig } from "@/site-config";
 import { getEntry } from 'astro:content'; // Add this import at the top
+import { ViewTransitions } from 'astro:transitions';
 
 // import SiteLinks from '@/components/SocialList.astro';
 import DynamicTheme from '@/components/DynamicTheme.astro';
@@ -83,7 +84,7 @@ const pageOgImage = ogImage || meta?.ogImage;
 
 <html lang="en" data-theme="light">
 	<head>
-		<!-- <ViewTransitions /> -->
+		<ViewTransitions />
 		<script>
             function getInitialTheme() {
                 const savedTheme = localStorage.getItem('theme');
