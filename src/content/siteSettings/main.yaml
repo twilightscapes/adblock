@@ -1,7 +1,7 @@
 logoImage: /images/logo/logoImage.svg
 defaultView: swipe
 themeMode: user
-MAX_POSTS: 3
+MAX_POSTS: 4
 MAX_POSTS_PER_PAGE: 20
 showHeader: true
 showLogo: true
@@ -17,4 +17,4 @@ enableImageBlur: true
 showSocial: true
 showTags: true
 showShare: true
-videoTimeLimitMinutes: 30
+videoTimeLimitMinutes: 5

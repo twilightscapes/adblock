@@ -10,7 +10,8 @@ showMore: true
 pitch: How It Works
 pitch2: Social Media That YOU Control
 pitch3: Life's too short to watch ads!
+youformTitle: Life's too short to watch ads!
 youformDescription: Paste any YouTube URL to remove ads and get enhanced controls
 youformPlaceholder: Paste YouTube URL here...
-youformShowTitle: false
+youformShowTitle: true
 postsectiontitle: Trending Now

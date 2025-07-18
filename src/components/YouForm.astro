@@ -27,7 +27,7 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
     max-width: 900px;
     margin: 0 auto;
     text-align: center;
-    min-height: 40vh;
+    /* min-height: 40vh; */
   }
 
   .you-form-title {
@@ -80,14 +80,15 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
 
   .you-form-input {
     width: 100%;
-    padding: 1.5rem 2rem;
+    max-width: 500px;
+    padding: .5rem .1rem;
     font-size: clamp(1.1rem, 2.8vw, 1.4rem);
     border: 3px solid var(--theme-ui-colors-siteColor, #4CAF50);
     border-radius: 60px;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
-    color: var(--theme-text, #fff);
-    text-align: center;
+    /* color: var(--theme-text, #fff); */
+    text-align: left;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     box-shadow: 
@@ -95,6 +96,7 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
       0 0 0 1px rgba(255, 255, 255, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
     font-weight: 400;
+        padding-left:1rem;
   }
 
   .you-form-input:focus {
@@ -109,7 +111,7 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
   }
 
   .you-form-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+
     transition: all 0.3s ease;
     font-weight: 300;
   }
@@ -121,7 +123,7 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
 
   .clipboard-button {
     position: absolute;
-    right: 12px;
+    right: 100px;
     top: 50%;
     transform: translateY(-50%);
     background: linear-gradient(45deg, var(--theme-accent, #4caf53), #45a06b);
