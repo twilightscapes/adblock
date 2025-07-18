@@ -22,7 +22,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     if (process.env.NETLIFY_URL) {
       return process.env.NETLIFY_URL;
     }
-    return 'https://pirateweb.org'; // Your actual domain
+    return 'https://adblock.video'; // Your actual domain
   };
 
   return {
@@ -50,10 +50,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 
 // Export a synchronous config for immediate use (with fallbacks)
 export const siteConfig = {
-  title: 'PIRATE',
-  description: 'Thanks for being a pirate!',
-  author: 'PIRATE',
-  siteUrl: 'https://pirateweb.org',
+  title: 'AdBlock Video',
+  description: 'Life is too short for ads!',
+  author: 'AdBlock Video',
+  siteUrl: 'https://adblock.video',
   themeColor: '#000000',
   backgroundColor: '#000000',
   logoImage: '/images/logo/logoImage.svg',
@@ -73,9 +73,10 @@ export const siteConfig = {
 } as const;
 
 // Content-related types
-export type Post = CollectionEntry<'posts'>;
-export type Page = CollectionEntry<'pages'>;
-
+// Ensure 'posts' and 'pages' are valid collections in your Astro content config.
+// If not, update the collection names below to match your actual content collections.
+export type Post = CollectionEntry<'post'>;
+export type Page = CollectionEntry<'page'>;
 // import { getMenuItems } from './utils/getMenuItems';
 
 // // Used to generate links in both the Header & Footer.

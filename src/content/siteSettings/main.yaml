@@ -9,7 +9,7 @@ showHome: true
 showTheme: true
 showSwitch: true
 showSearch: false
-showFooter: false
+showFooter: true
 showCheck: true
 showTitles: true
 showDates: false
