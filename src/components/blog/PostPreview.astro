@@ -61,7 +61,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
                 src={post.data.externalUrl}
                 title={post.data.title}
                 width="100%"
-                height="400"
+                height="100%"
                 frameborder="0"
                 allowfullscreen
                 loading="lazy"
@@ -183,19 +183,17 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     .iframe-container {
         position: relative;
         width: 100%;
-        /* padding-bottom: 56.25%;  */
-        /* aspect-ratio: 16/9; */
-        /* height: 0; */
+        aspect-ratio: 16/9;
         overflow: hidden;
     }
 
     .iframe-container iframe {
-        position: relative;
+        position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        height: 90%;
-        aspect-ratio: 16/9;
+        height: 100%;
+        object-fit: cover;
     }
 
     @media(hover:none) {
@@ -207,10 +205,18 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     
     .video-container {
         position: relative;
-        /* width: 100%;
-        height: 100%; */
-    
+        width: 100%;
+        aspect-ratio: 16/9;
+        min-width: 230px;
+        min-height:230px;
     }
+    
+    .video-container .video-thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
     .play-button {
         position: absolute;
         top: 45%;
