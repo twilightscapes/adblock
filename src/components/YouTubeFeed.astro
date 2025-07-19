@@ -125,7 +125,7 @@ const sortedVideos = allVideos
   .filter(video => video.publishDate)
   .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
   .slice(0, maxVideos);
----
+
 ---
 
 <style>
@@ -184,10 +184,16 @@ const sortedVideos = allVideos
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
+    border: 3px solid transparent;
+  }
+  
+  .youtube-video-card.playing {
+    border: 3px solid #ff0000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
   }
   
   .youtube-video-container {
@@ -382,14 +388,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const otherEmbed = otherContainer.querySelector('.youtube-embed') as HTMLElement;
             const otherThumbnail = otherContainer.querySelector('.youtube-thumbnail') as HTMLElement;
             const otherPlayButton = otherContainer.querySelector('.play-button') as HTMLElement;
+            const otherCard = otherContainer.closest('.youtube-video-card') as HTMLElement;
             
-            if (otherEmbed && otherThumbnail && otherPlayButton) {
+            if (otherEmbed && otherThumbnail && otherPlayButton && otherCard) {
               // Actually stop the video
               stopVideo(otherContainer);
               // Hide the embed and show thumbnail
               otherEmbed.style.display = 'none';
               otherThumbnail.style.display = 'block';
               otherPlayButton.style.display = 'flex';
+              // Remove playing indicator
+              otherCard.classList.remove('playing');
             }
           }
         });
@@ -398,6 +407,12 @@ document.addEventListener('DOMContentLoaded', function() {
         thumbnail.style.display = 'none';
         playButton.style.display = 'none';
         embedContainer.style.display = 'block';
+        
+        // Add playing indicator to this card
+        const currentCard = container.closest('.youtube-video-card') as HTMLElement;
+        if (currentCard) {
+          currentCard.classList.add('playing');
+        }
         
         // If this is an iframe video that was stopped, restore its original src
         const iframe = embedContainer.querySelector('iframe') as HTMLIFrameElement;
