@@ -1,8 +1,6 @@
 sectionOrdering:
-  - sectionType: feature
-    showTitle: false
   - sectionType: bio
-    showTitle: true
+    showTitle: false
   - sectionType: youtubefeeds
     customTitle: Hot Video Content
     customDescription: Check out our latest and trending videos
@@ -30,16 +28,7 @@ allYoutubeFeedSections:
 featureImage:
   alt: Paste YouTube Url Here
 youtube:
-  discriminant: true
-  value:
-    url: https://youtu.be/B6Oc2dUOZCg
-    title: Booya
-    controls: false
-    useCustomPlayer: true
-    mute: true
-    loop: true
-    start: 0
-    videoOnly: false
+  discriminant: false
 showMore: true
 cta: front link
 pitch: How It Works
