@@ -177,9 +177,9 @@ async function loadYoutubeFeed(slug: string | undefined): Promise<YouTubeFeedDat
   };
 }
 
-// Load dynamic YouTube feed sections
+// Load dynamic YouTube feed sections from allYoutubeFeedSections
 const youtubeFeedSections = await Promise.all(
-  (homepageData?.youtubeFeedSections || []).map(async (section, index) => {
+  (homepageData?.allYoutubeFeedSections || []).map(async (section, index) => {
     if (!section.feedConfig) return null;
     
     const feedData = await loadYoutubeFeed(section.feedConfig);
@@ -391,20 +391,6 @@ flex-direction: column;
 									<PhotoSection />
 								</>
 							);
-						case 'infoblock':
-							return selectedPitch && <InfoBlock pitch={{...selectedPitch, slug: selectedPitch.slug, showTwocol: selectedPitch.showTwocol}} />;
-						case 'infoblock2':
-							return (
-								<>
-									{selectedPitch2 && <InfoBlock pitch={{...selectedPitch2, slug: selectedPitch2.slug, showTwocol: selectedPitch2.showTwocol}} />}
-								</>
-							);
-						case 'infoblock3':
-							return (
-								<>
-									{selectedPitch3 && <InfoBlock pitch={{...selectedPitch3, slug: selectedPitch3.slug, showTwocol: selectedPitch3.showTwocol}} />}
-								</>
-							);
 						case 'resume':
 							// Use the section's own title/description settings
 							const resumeTitle = customTitle || "Resume";
@@ -521,6 +507,104 @@ flex-direction: column;
 									<Testimonials />
 								</div>
 							);
+						case 'youtubefeeds':
+							// Render all YouTube feeds from allYoutubeFeedSections
+							const youtubeFeedTitle = customTitle || "YouTube Videos";
+							const youtubeFeedDescription = customDescription || "";
+							const youtubeFeedShowTitle = showTitle;
+							
+							return (
+								<div>
+									{youtubeFeedShowTitle && (youtubeFeedTitle || youtubeFeedDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{youtubeFeedTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${youtubeFeedDescription ? '1rem' : '0'};`}>
+													{youtubeFeedTitle}
+												</h2>
+											)}
+											{youtubeFeedDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{youtubeFeedDescription}
+												</p>
+											)}
+										</div>
+									)}
+									{validYoutubeFeedSections.map((feedData, feedIndex) => {
+										if (!feedData) return null;
+										
+										const feedTitle = feedData.customTitle || feedData.title;
+										const feedDescription = feedData.customDescription || "";
+										const showFeedTitle = feedData.showTitle ?? true;
+										
+										return (
+											<div style="margin-bottom: 3rem;">
+												{showFeedTitle && (feedTitle || feedDescription) && (
+													<div style="text-align: center; margin-bottom: 1.5rem;">
+														{feedTitle && (
+															<h3 style="font-size: 1.8rem; color: var(--theme-accent); margin-bottom: 0.5rem;">
+																{feedTitle}
+															</h3>
+														)}
+														{feedDescription && (
+															<p style="font-size: 1.1rem; color: var(--theme-text); opacity: 0.7;">
+																{feedDescription}
+															</p>
+														)}
+													</div>
+												)}
+												<YouTubeFeed 
+													channelIds={feedData.channelIds}
+													maxVideos={feedData.maxVideos}
+													title={feedTitle}
+													showTitles={feedData.showTitles}
+													showSectionTitle={false}
+													useCustomPlayer={feedData.useCustomPlayer}
+													defaultView={feedData.defaultView}
+													sectionId={`youtube-feed-section-${index}-${feedIndex}`}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							);
+						case 'contentblock':
+							// Render a specific content block based on contentBlockId
+							const contentBlockTitle = customTitle || "Content Block";
+							const contentBlockDescription = customDescription || "";
+							const contentBlockShowTitle = showTitle;
+							const contentBlockId = typeof section === 'object' ? section.contentBlockId : null;
+							
+							if (!contentBlockId) return null;
+							
+							// Find the selected pitch/info block
+							let selectedContentBlock: PitchData | undefined = undefined;
+							if (contentBlockId === selectedPitchSlug) selectedContentBlock = selectedPitch;
+							else if (contentBlockId === selectedPitchSlug2) selectedContentBlock = selectedPitch2;
+							else if (contentBlockId === selectedPitchSlug3) selectedContentBlock = selectedPitch3;
+							
+							return selectedContentBlock ? (
+								<div>
+									{contentBlockShowTitle && (contentBlockTitle || contentBlockDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{contentBlockTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${contentBlockDescription ? '1rem' : '0'};`}>
+													{contentBlockTitle}
+												</h2>
+											)}
+											{contentBlockDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{contentBlockDescription}
+												</p>
+											)}
+										</div>
+									)}
+									<InfoBlock pitch={{
+										...selectedContentBlock, 
+										slug: selectedContentBlock.slug, 
+										showTwocol: selectedContentBlock.showTwocol || false
+									}} />
+								</div>
+							) : null;
 						default:
 							return null;
 					}
@@ -530,47 +614,6 @@ flex-direction: column;
 			</section>
 		)})}
     
-    <!-- YouTube Feed Sections -->
-    {validYoutubeFeedSections.map((feedData, index) => {
-      if (!feedData) return null;
-      
-      const feedTitle = feedData.customTitle || feedData.title;
-      const feedDescription = feedData.customDescription || "";
-      const showTitle = feedData.showTitle ?? true;
-      
-      return (
-        <section>
-          <div>
-            {showTitle && (feedTitle || feedDescription) && (
-              <div style="text-align: center; margin-bottom: 2rem;">
-                {feedTitle && (
-                  <h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${feedDescription ? '1rem' : '0'};`}>
-                    {feedTitle}
-                  </h2>
-                )}
-                {feedDescription && (
-                  <p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-                    {feedDescription}
-                  </p>
-                )}
-              </div>
-            )}
-            <YouTubeFeed 
-              channelIds={feedData.channelIds}
-              maxVideos={feedData.maxVideos}
-              title={feedTitle}
-              showTitles={feedData.showTitles}
-              showSectionTitle={false}
-              useCustomPlayer={feedData.useCustomPlayer}
-              defaultView={feedData.defaultView}
-              sectionId={`youtube-feed-${index}`}
-            />
-          </div>
-        </section>
-      );
-    })}
-    
-
     {homeCTA && (      <section style="display:grid; place-content:center; padding:10vh 0">
       <CTAs 
         title={homeCTA.data.title ?? ''}

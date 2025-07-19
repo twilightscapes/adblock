@@ -523,11 +523,17 @@ export default config({
                 { label: 'Resume Section', value: 'resume' },
                 { label: 'FAQ Section', value: 'faq' },
                 { label: 'Testimonials Section', value: 'testimonials' },
-                { label: 'Content Block 1', value: 'infoblock1' },
-                { label: 'Content Block 2', value: 'infoblock2' },
-                { label: 'Content Block 3', value: 'infoblock3' }
+                { label: 'YouTube Feeds', value: 'youtubefeeds' },
+                { label: 'Content Block', value: 'contentblock' }
               ],
               defaultValue: 'feature'
+            }),
+            // For content blocks - select which block to use
+            contentBlockId: fields.relationship({
+              label: 'Content Block',
+              description: 'Select which content block to display (only used for Content Block sections)',
+              collection: 'pitches',
+              validation: { isRequired: false }
             }),
             customTitle: fields.text({
               label: 'Custom Section Title (Optional)',
@@ -551,6 +557,7 @@ export default config({
             itemLabel: (props) => {
               const sectionType = props.fields.sectionType.value;
               const customTitle = props.fields.customTitle.value;
+              const contentBlockId = props.fields.contentBlockId.value;
               
               // Get the section label from the options
               const sectionLabels = {
@@ -563,19 +570,27 @@ export default config({
                 'resume': 'Resume Section',
                 'faq': 'FAQ Section',
                 'testimonials': 'Testimonials Section',
-                'infoblock1': 'Content Block 1',
-                'infoblock2': 'Content Block 2',
-                'infoblock3': 'Content Block 3'
+                'youtubefeeds': 'YouTube Feeds',
+                'contentblock': 'Content Block'
               };
               
               const baseLabel = sectionLabels[sectionType] || sectionType;
+              
+              // For content blocks, show the block ID if available
+              if (sectionType === 'contentblock' && contentBlockId) {
+                return `${baseLabel}: ${contentBlockId}`;
+              }
+              
               return customTitle ? `${baseLabel}: ${customTitle}` : baseLabel;
             }
           }
         ),
 
         // YouTube Feed Sections - Dynamic array of feed sections
-        youtubeFeedSections: fields.array(
+        divider1: fields.empty(),
+
+        // YouTube Feeds Management - used when sectionType is 'youtubefeeds'
+        allYoutubeFeedSections: fields.array(
           fields.object({
             feedConfig: fields.relationship({
               label: 'YouTube Feed Configuration',
@@ -583,32 +598,30 @@ export default config({
               collection: 'youtubeFeeds'
             }),
             customTitle: fields.text({
-              label: 'Custom Section Title (Optional)',
-              description: 'Override the feed title for this section. Leave blank to use the feed title.',
+              label: 'Custom Feed Title (Optional)',
+              description: 'Override the feed title for this specific feed.',
               validation: { isRequired: false }
             }),
             customDescription: fields.text({
-              label: 'Section Description (Optional)',
-              description: 'Add a description that appears below the title.',
+              label: 'Feed Description (Optional)',
+              description: 'Add a description that appears below the feed title.',
               validation: { isRequired: false }
             }),
             showTitle: fields.checkbox({
-              label: 'Show Title',
-              description: 'Display the section title and description',
+              label: 'Show Feed Title',
+              description: 'Display the title for this specific feed',
               defaultValue: true
             })
           }),
           {
-            label: 'YouTube Feed Sections',
-            description: 'Add YouTube feed sections to your homepage. Each section can use a different feed configuration.',
+            label: 'All YouTube Feeds',
+            description: 'Manage all YouTube feeds that can be displayed when you add a "YouTube Feeds" section to your homepage.',
             itemLabel: (props) => {
               const customTitle = props.fields.customTitle.value;
-              return customTitle || 'YouTube Feed Section';
+              return customTitle || 'YouTube Feed';
             }
           }
         ),
-
-        divider1: fields.empty(),
 
         featureImage: fields.object({
           src: fields.image({

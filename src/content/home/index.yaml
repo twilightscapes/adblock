@@ -3,6 +3,10 @@ sectionOrdering:
     showTitle: false
   - sectionType: bio
     showTitle: true
+  - sectionType: youtubefeeds
+    customTitle: Hot Video Content
+    customDescription: Check out our latest and trending videos
+    showTitle: true
   - sectionType: gallery
     showTitle: true
   - sectionType: testimonials
@@ -13,9 +17,10 @@ sectionOrdering:
     showTitle: true
   - sectionType: faq
     showTitle: true
-  - sectionType: infoblock1
+  - sectionType: posts
+    contentBlockId: Life's too short to watch ads!
     showTitle: true
-youtubeFeedSections:
+allYoutubeFeedSections:
   - feedConfig: trending-content
     customTitle: 'Hot Right Now:'
     showTitle: true
