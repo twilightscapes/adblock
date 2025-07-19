@@ -369,6 +369,15 @@ button.topper{background:var(--theme-header) !important;}
 	  .slider .video-container, .slider .post-card1, .slider .custom-youtube-player{ min-width: 80vw ;}
 
 	  .slider .iframe-container{ min-width: 80vw;}
+	  
+	  /* Override prose container max-width for slider content */
+	  .prose .slider {
+	    max-width: none !important;
+	  }
+	  
+	  .prose .section-content {
+	    max-width: none !important;
+	  }
 
 
 
