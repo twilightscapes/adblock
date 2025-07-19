@@ -153,6 +153,9 @@ interface YouTubeFeedData {
   showSectionTitle?: boolean;
   useCustomPlayer: boolean;
   defaultView: 'grid' | 'swipe';
+  displayTitle?: string;
+  customTitle?: string;
+  sectionIndex?: number;
 }
 
 // Helper function to load YouTube feed data
@@ -185,6 +188,8 @@ const youtubeFeedSections = await Promise.all(
     return {
       ...feedData,
       customTitle: section.customTitle,
+      customDescription: section.customDescription,
+      showTitle: section.showTitle ?? true,
       displayTitle: section.customTitle || feedData.title,
       showSectionTitle: feedData.showSectionTitle ?? true,
       sectionIndex: index
@@ -202,76 +207,12 @@ const legacyYoutubeFeed = await loadYoutubeFeed(homepageData?.youtubeFeedSection
 
 
 const allPosts = await getAllPosts();
-const allPostsSorted = sortMDByDate(allPosts, true).slice(0, MAX_POSTS);
-type Section = {
-  name: string;
-  show: boolean;
-  order: number;
-  component: any;
-  data?: YouTubeFeedData;
+const allPostsSorted = sortMDByDate(allPosts).slice(0, MAX_POSTS || 5);
+
+const meta = {
+	description: "Welcome to my personal website",
+	title: "Home",
 };
-
-const sections: Section[] = (homeData.sectionOrdering || []).map((sectionName: string, index: number) => {
-  switch (sectionName) {
-    case 'youform':
-      return { name: 'youform', show: true, order: index, component: YouForm };
-    case 'feature':
-      return { name: 'feature', show: true, order: index, component: Feature };
-    case 'bio':
-      return { name: 'bio', show: true, order: index, component: Bio };
-    case 'app':
-      return { name: 'app', show: true, order: index, component: App };
-    case 'gallery':
-      return { name: 'gallery', show: true, order: index, component: PhotoSection };
-    case 'posts':
-      return { name: 'posts', show: true, order: index, component: PostPreview };
-    case 'faq':
-      return { name: 'faq', show: true, order: index, component: Faqs };
-    case 'testimonials':
-      return { name: 'testimonials', show: true, order: index, component: Testimonials };
-    case 'resume':
-      return { name: 'resume', show: true, order: index, component: Resume };
-    case 'youtubefeed':
-      return {
-        name: 'youtubefeed',
-        show: !!legacyYoutubeFeed,
-        order: index,
-        component: YouTubeFeed,
-        data: legacyYoutubeFeed
-      };
-    case 'infoblock1':
-      return {
-        name: 'infoblock',
-        show: !!selectedPitch,
-        order: index,
-        component: InfoBlock
-      };
-    case 'infoblock2':
-      return {
-        name: 'infoblock2',
-        show: !!selectedPitch2,
-        order: index,
-        component: InfoBlock
-      };
-    case 'infoblock3':
-      return {
-        name: 'infoblock3',
-        show: !!selectedPitch3,
-        order: index,
-        component: InfoBlock
-      };
-    default:
-      return null;
-  }
-}).filter(Boolean) as Section[];
-
-  
-
-
-const sortedSections = sections  .filter(section => section.show)
-  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-
 ---
 
 <style>
@@ -303,40 +244,94 @@ flex-direction: column;
 
 	<div class="scroll-snap-container prose-pirate flex flex-col home">
     
-		{sortedSections.map(section => (
-			<section class={section.name === 'resume' ? 'resume' : ''}>
+		{(homeData.sectionOrdering || []).map((section, index) => {
+			// Handle new object structure for sections
+			const sectionType = typeof section === 'string' ? section : section.sectionType;
+			const customTitle = typeof section === 'object' ? section.customTitle : null;
+			const customDescription = typeof section === 'object' ? section.customDescription : null;
+			const showTitle = typeof section === 'object' ? section.showTitle ?? true : true;
+			
+			const sectionData = { name: sectionType, order: index };
+			return (
+			<section class={sectionData.name === 'resume' ? 'resume' : ''}>
 				{(() => {
-					switch (section.name) {
+					switch (sectionData.name) {
 						case 'feature':
-              return <Feature content={{
-                title: pwaSettings?.data?.title ?? '',
-                youtube: homeData.youtube?.value && homeData.youtube.value.url
-                  ? (() => {
-                      const { videoOnly, ...rest } = homeData.youtube.value;
-                      return { ...rest, url: homeData.youtube.value.url };
-                    })()
-                  : undefined,
-                CTAs: homeCTA ? {
-                  title: homeCTA.data.title ?? '',
-                  description: homeCTA.data.description ?? '',
-                  ctaUrl: homeCTA.data.ctaUrl ?? '',
-                  showFancy: homeCTA.data.showFancy ?? false,
-                  showTransition: homeCTA.data.showTransition ?? false
-                } : undefined,
-                // Only include featureImage if it exists and matches the expected type
-                ...(homeData.featureImage && typeof homeData.featureImage === 'object'
-                  ? {
-                      featureImage: {
-                        src: (homeData.featureImage as any).src ?? '',
-                        alt: (homeData.featureImage as any).alt ?? '',
-                        height: (homeData.featureImage as any).height ?? 400,
-                        width: (homeData.featureImage as any).width ?? 600
-                      }
-                    }
-                  : {})
-              }} />;
+							// Use the section's own title/description settings
+							const featureTitle = customTitle || "Featured Content";
+							const featureDescription = customDescription || "";
+							const featureShowTitle = showTitle;
+							
+							return (
+								<>
+									{featureShowTitle && (featureTitle || featureDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{featureTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${featureDescription ? '1rem' : '0'};`}>
+													{featureTitle}
+												</h2>
+											)}
+											{featureDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{featureDescription}
+												</p>
+											)}
+										</div>
+									)}
+									<Feature content={{
+										title: pwaSettings?.data?.title ?? '',
+										youtube: homeData.youtube?.value && homeData.youtube.value.url
+											? (() => {
+													const { videoOnly, ...rest } = homeData.youtube.value;
+													return { ...rest, url: homeData.youtube.value.url };
+												})()
+											: undefined,
+										CTAs: homeCTA ? {
+											title: homeCTA.data.title ?? '',
+											description: homeCTA.data.description ?? '',
+											ctaUrl: homeCTA.data.ctaUrl ?? '',
+											showFancy: homeCTA.data.showFancy ?? false,
+											showTransition: homeCTA.data.showTransition ?? false
+										} : undefined,
+										// Only include featureImage if it exists and matches the expected type
+										...(homeData.featureImage && typeof homeData.featureImage === 'object'
+											? {
+													featureImage: {
+														src: (homeData.featureImage as any).src ?? '',
+														alt: (homeData.featureImage as any).alt ?? '',
+														height: (homeData.featureImage as any).height ?? 400,
+														width: (homeData.featureImage as any).width ?? 600
+													}
+												}
+											: {})
+									}} />
+								</>
+							);
 						case 'bio':
-							return <Bio />;
+							// Use the section's own title/description settings
+							const bioTitle = customTitle || "About";
+							const bioDescription = customDescription || "";
+							const bioShowTitle = showTitle;
+							
+							return (
+								<>
+									{bioShowTitle && (bioTitle || bioDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{bioTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${bioDescription ? '1rem' : '0'};`}>
+													{bioTitle}
+												</h2>
+											)}
+											{bioDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{bioDescription}
+												</p>
+											)}
+										</div>
+									)}
+									<Bio />
+								</>
+							);
 						case 'youform':
 							return (
 								<YouForm 
@@ -347,9 +342,55 @@ flex-direction: column;
 								/>
 							);
 						case 'app':
-							return (<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style="margin-bottom:0;">{homeData.locationtitle}</h2><App />);
+							// Use the section's own title/description settings
+							const appTitle = customTitle || "Interactive Map";
+							const appDescription = customDescription || "";
+							const appShowTitle = showTitle;
+							
+							return (
+								<>
+									{appShowTitle && (appTitle || appDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{appTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${appDescription ? '1rem' : '0'};`}>
+													{appTitle}
+												</h2>
+											)}
+											{appDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{appDescription}
+												</p>
+											)}
+										</div>
+									)}
+									<App />
+								</>
+							);
 						case 'gallery':
-							return (<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg">{homeData.photosectiontitle}</h2><PhotoSection />);
+							// Use the section's own title/description settings
+							const galleryTitle = customTitle || "Photo Gallery";
+							const galleryDescription = customDescription || "";
+							const galleryShowTitle = showTitle;
+							
+							return (
+								<>
+									{galleryShowTitle && (galleryTitle || galleryDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{galleryTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${galleryDescription ? '1rem' : '0'};`}>
+													{galleryTitle}
+												</h2>
+											)}
+											{galleryDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{galleryDescription}
+												</p>
+											)}
+										</div>
+									)}
+									<PhotoSection />
+								</>
+							);
 						case 'infoblock':
 							return selectedPitch && <InfoBlock pitch={{...selectedPitch, slug: selectedPitch.slug, showTwocol: selectedPitch.showTwocol}} />;
 						case 'infoblock2':
@@ -365,44 +406,53 @@ flex-direction: column;
 								</>
 							);
 						case 'resume':
-							return <Resume 
-								leftColumnItems={resumeSettings?.data?.leftColumnItems || []}
-								rightColumnItems={resumeSettings?.data?.rightColumnItems || []}
-							/>;
-						case 'youtubefeed':
-						case 'youtubefeed1':
-						case 'youtubefeed2':
-						case 'youtubefeed3':
-							const feedData = section.data;
-							return feedData && (
+							// Use the section's own title/description settings
+							const resumeTitle = customTitle || "Resume";
+							const resumeDescription = customDescription || "";
+							const resumeShowTitle = showTitle;
+							
+							return (
 								<div>
-									{feedData.description && (
+									{resumeShowTitle && (resumeTitle || resumeDescription) && (
 										<div style="text-align: center; margin-bottom: 2rem;">
-											<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-												{feedData.description}
-											</p>
+											{resumeTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${resumeDescription ? '1rem' : '0'};`}>
+													{resumeTitle}
+												</h2>
+											)}
+											{resumeDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{resumeDescription}
+												</p>
+											)}
 										</div>
 									)}
-									<YouTubeFeed 
-										channelIds={feedData.channelIds}
-										maxVideos={feedData.maxVideos}
-										title={feedData.title}
-										showTitles={feedData.showTitles}
-										showSectionTitle={feedData.showSectionTitle ?? true}
-										useCustomPlayer={feedData.useCustomPlayer}
-										defaultView={feedData.defaultView}
-										sectionId="youtube-feed-legacy"
+									<Resume 
+										leftColumnItems={resumeSettings?.data?.leftColumnItems || []}
+										rightColumnItems={resumeSettings?.data?.rightColumnItems || []}
 									/>
 								</div>
 							);
               case 'posts':
+							// Use the section's own title/description settings
+							const postsTitle = customTitle || "Latest Posts";
+							const postsDescription = customDescription || "";
+							const postsShowTitle = showTitle;
+							
 							return (
 								<div data-section-id="posts-section">
 									<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
-										{homeData.postsectiontitle && (
-											<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style="margin: 0; flex: 1;">
-												{homeData.postsectiontitle}
-											</h2>
+										{postsShowTitle && postsTitle && (
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${postsDescription ? '1rem' : '0'};`}>
+													{postsTitle}
+												</h2>
+												{postsDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{postsDescription}
+													</p>
+												)}
+											</div>
 										)}
 										<ViewModeSwitch 
 											sectionId="posts-section" 
@@ -422,15 +472,55 @@ flex-direction: column;
 								</div>
 							);
 						case 'faq':
+							// Use the section's own title/description settings
+							const faqTitle = customTitle || "Frequently Asked Questions";
+							const faqDescription = customDescription || "";
+							const faqShowTitle = showTitle;
+							
 							return (
 								<>
-									<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg">{homeData.faqsectiontitle}</h2>
+									{faqShowTitle && (faqTitle || faqDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{faqTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${faqDescription ? '1rem' : '0'};`}>
+													{faqTitle}
+												</h2>
+											)}
+											{faqDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{faqDescription}
+												</p>
+											)}
+										</div>
+									)}
 									<Faqs />
 								</>
 							);
 						case 'testimonials':
-							return <div class="testi" style="">
-								<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg">{homeData.testimonialtitle}</h2><Testimonials /></div>;
+							// Use the section's own title/description settings
+							const testimonialsTitle = customTitle || "What People Say";
+							const testimonialsDescription = customDescription || "";
+							const testimonialsShowTitle = showTitle;
+							
+							return (
+								<div class="testi" style="">
+									{testimonialsShowTitle && (testimonialsTitle || testimonialsDescription) && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											{testimonialsTitle && (
+												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${testimonialsDescription ? '1rem' : '0'};`}>
+													{testimonialsTitle}
+												</h2>
+											)}
+											{testimonialsDescription && (
+												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+													{testimonialsDescription}
+												</p>
+											)}
+										</div>
+									)}
+									<Testimonials />
+								</div>
+							);
 						default:
 							return null;
 					}
@@ -438,7 +528,47 @@ flex-direction: column;
 
         
 			</section>
-		))}
+		)})}
+    
+    <!-- YouTube Feed Sections -->
+    {validYoutubeFeedSections.map((feedData, index) => {
+      if (!feedData) return null;
+      
+      const feedTitle = feedData.customTitle || feedData.title;
+      const feedDescription = feedData.customDescription || "";
+      const showTitle = feedData.showTitle ?? true;
+      
+      return (
+        <section>
+          <div>
+            {showTitle && (feedTitle || feedDescription) && (
+              <div style="text-align: center; margin-bottom: 2rem;">
+                {feedTitle && (
+                  <h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${feedDescription ? '1rem' : '0'};`}>
+                    {feedTitle}
+                  </h2>
+                )}
+                {feedDescription && (
+                  <p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+                    {feedDescription}
+                  </p>
+                )}
+              </div>
+            )}
+            <YouTubeFeed 
+              channelIds={feedData.channelIds}
+              maxVideos={feedData.maxVideos}
+              title={feedTitle}
+              showTitles={feedData.showTitles}
+              showSectionTitle={false}
+              useCustomPlayer={feedData.useCustomPlayer}
+              defaultView={feedData.defaultView}
+              sectionId={`youtube-feed-${index}`}
+            />
+          </div>
+        </section>
+      );
+    })}
     
 
     {homeCTA && (      <section style="display:grid; place-content:center; padding:10vh 0">
@@ -451,31 +581,6 @@ flex-direction: column;
       />
     </section>
   )}
-
-  <!-- Dynamic YouTube Feed Sections -->
-  {validYoutubeFeedSections.map(feedSection => (
-    <section>
-      <div>
-        {feedSection.description && (
-          <div style="text-align: center; margin-bottom: 2rem;">
-            <p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-              {feedSection.description}
-            </p>
-          </div>
-        )}
-        <YouTubeFeed 
-          channelIds={feedSection.channelIds}
-          maxVideos={feedSection.maxVideos}
-          title={feedSection.displayTitle}
-          showTitles={feedSection.showTitles}
-          showSectionTitle={feedSection.showSectionTitle ?? true}
-          useCustomPlayer={feedSection.useCustomPlayer}
-          defaultView={feedSection.defaultView}
-          sectionId={`youtube-feed-${feedSection.sectionIndex}`}
-        />
-      </div>
-    </section>
-  ))}
 
 	</div>
 </PageLayout>

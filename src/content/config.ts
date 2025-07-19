@@ -68,7 +68,12 @@ export const collections = {
   home: defineCollection({
     type: 'data',
     schema: z.object({
-      sectionOrdering: z.array(z.string()).optional(),
+      sectionOrdering: z.array(z.object({
+        sectionType: z.string(),
+        customTitle: z.string().optional(),
+        customDescription: z.string().optional(),
+        showTitle: z.boolean().optional(),
+      })).optional(),
       featureImage: z.object({
         src: z.string().optional(),
         alt: z.string().optional(),

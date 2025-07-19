@@ -1,16 +1,27 @@
 sectionOrdering:
-  - youform
-  - posts
+  - sectionType: feature
+    showTitle: true
+  - sectionType: bio
+    showTitle: true
+  - sectionType: gallery
+    showTitle: true
+  - sectionType: testimonials
+    customTitle: Testimonials
+    customDescription: This is some neat stuff said about us!
+    showTitle: true
 youtubeFeedSections:
   - feedConfig: trending-content
     customTitle: 'Hot Right Now:'
+    showTitle: true
   - feedConfig: latest-videos
     customTitle: Latest Tech Videos
+    showTitle: true
 featureImage:
   alt: Paste YouTube Url Here
 youtube:
   discriminant: false
 showMore: true
+cta: front link
 pitch: How It Works
 pitch2: Social Media That YOU Control
 pitch3: Life's too short to watch ads!
@@ -18,4 +29,3 @@ youformTitle: Life's too short to watch ads!
 youformDescription: Paste any YouTube URL to remove ads and get enhanced controls
 youformPlaceholder: Paste YouTube URL here...
 youformShowTitle: true
-postsectiontitle: 'Trending Now:'

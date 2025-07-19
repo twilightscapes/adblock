@@ -510,28 +510,67 @@ export default config({
       schema: {
 
         sectionOrdering: fields.array(
-          fields.select({
-            label: 'Section',
-            options: [
-              { label: 'Feature Section', value: 'feature' },
-              { label: 'Bio Section', value: 'bio' },
-              { label: 'YouTube Form Section', value: 'youform' },
-              { label: 'Map/Video Section', value: 'app' },
-              { label: 'Gallery Section', value: 'gallery' },
-              { label: 'Posts Section', value: 'posts' },
-              { label: 'Resume Section', value: 'resume' },
-              { label: 'FAQ Section', value: 'faq' },
-              { label: 'Testimonials Section', value: 'testimonials' },
-              { label: 'Content Block 1', value: 'infoblock1' },
-              { label: 'Content Block 2', value: 'infoblock2' },
-              { label: 'Content Block 3', value: 'infoblock3' }
-            ],
-            defaultValue: 'feature'
+          fields.object({
+            sectionType: fields.select({
+              label: 'Section Type',
+              options: [
+                { label: 'Feature Section', value: 'feature' },
+                { label: 'Bio Section', value: 'bio' },
+                { label: 'YouTube Form Section', value: 'youform' },
+                { label: 'Map/Video Section', value: 'app' },
+                { label: 'Gallery Section', value: 'gallery' },
+                { label: 'Posts Section', value: 'posts' },
+                { label: 'Resume Section', value: 'resume' },
+                { label: 'FAQ Section', value: 'faq' },
+                { label: 'Testimonials Section', value: 'testimonials' },
+                { label: 'Content Block 1', value: 'infoblock1' },
+                { label: 'Content Block 2', value: 'infoblock2' },
+                { label: 'Content Block 3', value: 'infoblock3' }
+              ],
+              defaultValue: 'feature'
+            }),
+            customTitle: fields.text({
+              label: 'Custom Section Title (Optional)',
+              description: 'Override the default section title. Leave blank to use the default title.',
+              validation: { isRequired: false }
+            }),
+            customDescription: fields.text({
+              label: 'Section Description (Optional)',
+              description: 'Add a description that appears below the title.',
+              validation: { isRequired: false }
+            }),
+            showTitle: fields.checkbox({
+              label: 'Show Title',
+              description: 'Display the section title and description',
+              defaultValue: true
+            })
           }),
           {
             label: 'Home Page Sections',
             description: 'Drag to reorder sections - position in list determines display order on the page',
-            itemLabel: (props) => props.value,
+            itemLabel: (props) => {
+              const sectionType = props.fields.sectionType.value;
+              const customTitle = props.fields.customTitle.value;
+              
+              // Get the section label from the options
+              const sectionLabels = {
+                'feature': 'Feature Section',
+                'bio': 'Bio Section',
+                'youform': 'YouTube Form Section',
+                'app': 'Map/Video Section',
+                'gallery': 'Gallery Section',
+                'posts': 'Posts Section',
+                'resume': 'Resume Section',
+                'faq': 'FAQ Section',
+                'testimonials': 'Testimonials Section',
+                'infoblock1': 'Content Block 1',
+                'infoblock2': 'Content Block 2',
+                'infoblock3': 'Content Block 3'
+              };
+              
+              const baseLabel = sectionLabels[sectionType] || sectionType;
+              return customTitle ? `${baseLabel}: ${customTitle}` : baseLabel;
+            }
           }
         ),
 
@@ -547,14 +586,24 @@ export default config({
               label: 'Custom Section Title (Optional)',
               description: 'Override the feed title for this section. Leave blank to use the feed title.',
               validation: { isRequired: false }
+            }),
+            customDescription: fields.text({
+              label: 'Section Description (Optional)',
+              description: 'Add a description that appears below the title.',
+              validation: { isRequired: false }
+            }),
+            showTitle: fields.checkbox({
+              label: 'Show Title',
+              description: 'Display the section title and description',
+              defaultValue: true
             })
           }),
           {
             label: 'YouTube Feed Sections',
             description: 'Add YouTube feed sections to your homepage. Each section can use a different feed configuration.',
             itemLabel: (props) => {
-              const feedTitle = props.fields.customTitle.value || 'YouTube Feed Section';
-              return feedTitle;
+              const customTitle = props.fields.customTitle.value;
+              return customTitle || 'YouTube Feed Section';
             }
           }
         ),
@@ -666,12 +715,7 @@ export default config({
         
         divider6: fields.empty(),
         
-        photosectiontitle: fields.text({ label: 'Photo Section Title Header'  }),
-        locationtitle: fields.text({ label: 'Location Map Title Header'  }),
-        faqsectiontitle: fields.text({ label: 'FAQ Title Header'  }),
-        testimonialtitle: fields.text({ label: 'Testimonials Title Header' }),
-        postsectiontitle: fields.text({ label: 'Posts Title Header'  }),
-
+        // Section Display Settings
         divider2: fields.empty(),
 
         
