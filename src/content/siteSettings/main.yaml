@@ -17,4 +17,4 @@ enableImageBlur: true
 showSocial: true
 showTags: true
 showShare: true
-videoTimeLimitMinutes: 5
+videoTimeLimitMinutes: 0.2

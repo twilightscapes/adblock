@@ -3,7 +3,7 @@ sectionOrdering:
   - posts
 youtubeFeedSections:
   - feedConfig: trending-content
-    customTitle: Fuck yea
+    customTitle: 'Hot Right Now:'
   - feedConfig: latest-videos
     customTitle: Latest Tech Videos
 featureImage:
