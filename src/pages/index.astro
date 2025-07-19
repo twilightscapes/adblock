@@ -14,7 +14,7 @@ import App from "@/components/App.astro";
 import InfoBlock from "@/components/InfoBlock.astro";
 import Resume from '@/components/Resume.astro';
 import YouForm from '@/components/YouForm.astro';
-
+import YouTubeFeed from "@/components/YouTubeFeed.astro";
 
 
 import PhotoSection from "@/components/PhotoGallery.astro"
@@ -344,6 +344,27 @@ flex-direction: column;
 			</section>
 		))}
     
+
+<YouTubeFeed 
+  channelIds={["UCBJycsmduvYEL83R_U4JriQ"]}
+  maxVideos={6}
+  title="Latest YouTube Videos"
+  defaultView={defaultView}  // This comes from your siteSettings
+/>
+
+<YouTubeFeed 
+  channelIds={[
+    "UCjjBjVc0b1cIpNGEeZtS2lg", // Tucker Carlson
+    "UCsooa4yRKGN_zEE8iknghZA", // TED-Ed
+    "UCBJycsmduvYEL83R_U4JriQ", // Marques Brownlee
+    "UC6nSFpj9HTCZ5t-N3Rm3-HA"  // Vsauce
+  ]}
+  maxVideos={24}
+  title="Trending Content"
+  defaultView={defaultView}
+/>
+
+
     {homeCTA && (      <section style="display:grid; place-content:center; padding:10vh 0">
       <CTAs 
         title={homeCTA.data.title ?? ''}

@@ -1,0 +1,346 @@
+---
+import YouTubeEmbed from './YouTubeEmbed.astro';
+
+interface Props {
+  channelIds?: string[];
+  channelId?: string; // Backward compatibility
+  maxVideos?: number;
+  title?: string;
+  showTitles?: boolean;
+  useCustomPlayer?: boolean;
+  defaultView?: 'grid' | 'swipe';
+}
+
+const { 
+  channelIds = [],
+  channelId,
+  maxVideos = 6,
+  title = "Latest YouTube Videos",
+  showTitles = true,
+  useCustomPlayer = false,
+  defaultView = 'grid'
+} = Astro.props;
+
+// Combine channelId and channelIds for backward compatibility
+const allChannelIds = channelId ? [channelId, ...channelIds] : channelIds;
+
+// Default channels if none provided (popular tech/educational channels)
+const defaultChannels = [
+  "UCBJycsmduvYEL83R_U4JriQ", // Marques Brownlee
+  "UC6nSFpj9HTCZ5t-N3Rm3-HA", // Vsauce
+  "UCsooa4yRKGN_zEE8iknghZA"  // TED-Ed
+];
+
+const finalChannelIds = allChannelIds.length > 0 ? allChannelIds : defaultChannels;
+
+interface YouTubeVideo {
+  id: string;
+  title: string;
+  thumbnail: string;
+  publishDate: string;
+  description: string;
+  channelTitle?: string;
+}
+
+async function fetchYouTubeRSS(channelId: string): Promise<YouTubeVideo[]> {
+  try {
+    console.log(`Fetching RSS for channel: ${channelId}`);
+    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+    const response = await fetch(rssUrl);
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch RSS for channel ${channelId}: ${response.status}`);
+      return [];
+    }
+    
+    const xmlText = await response.text();
+    console.log(`RSS response length for ${channelId}: ${xmlText.length} characters`);
+    const videos: YouTubeVideo[] = [];
+    
+    // Extract channel title
+    const channelTitleMatch = xmlText.match(/<title>(.*?)<\/title>/);
+    const channelTitle = channelTitleMatch ? channelTitleMatch[1]
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'") : '';
+    
+    console.log(`Channel title for ${channelId}: ${channelTitle}`);
+    
+    // Extract video entries
+    const entryMatches = xmlText.match(/<entry>(.*?)<\/entry>/gs);
+    console.log(`Found ${entryMatches?.length || 0} video entries for ${channelId}`);
+    
+    if (entryMatches) {
+      for (const entry of entryMatches) {
+        const videoIdMatch = entry.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
+        const titleMatch = entry.match(/<title>(.*?)<\/title>/);
+        const publishedMatch = entry.match(/<published>(.*?)<\/published>/);
+        const descriptionMatch = entry.match(/<media:description>(.*?)<\/media:description>/);
+        
+        if (videoIdMatch && titleMatch) {
+          const videoId = videoIdMatch[1];
+          const title = titleMatch[1]
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'");
+          
+          const description = descriptionMatch ? descriptionMatch[1]
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'") : '';
+          
+          videos.push({
+            id: videoId,
+            title,
+            thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+            publishDate: publishedMatch ? publishedMatch[1] : '',
+            description: description.substring(0, 150) + '...',
+            channelTitle
+          });
+        }
+      }
+    }
+    
+    console.log(`Successfully parsed ${videos.length} videos for ${channelId}`);
+    return videos;
+  } catch (error) {
+    console.error(`Error fetching YouTube RSS for channel ${channelId}:`, error);
+    return [];
+  }
+}
+
+// Fetch videos from all channels
+const allVideosPromises = finalChannelIds.map(id => fetchYouTubeRSS(id));
+const allVideosArrays = await Promise.all(allVideosPromises);
+const allVideos = allVideosArrays.flat();
+
+// Sort by publish date and limit
+const sortedVideos = allVideos
+  .filter(video => video.publishDate)
+  .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+  .slice(0, maxVideos);
+---
+---
+
+<style>
+  .youtube-feed {
+    width: 100%;
+    padding: 2rem 1rem;
+  }
+  
+  .youtube-feed-title {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 2rem;
+    background: linear-gradient(45deg, var(--theme-accent), #FF6B6B);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .youtube-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* Slider/Swipe mode styles */
+  .youtube-grid.slider {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1rem;
+    padding: 0 1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .youtube-grid.slider::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .youtube-grid.slider .youtube-video-card {
+    flex: 0 0 300px;
+    scroll-snap-align: start;
+  }
+  
+  /* Grid mode styles */
+  .youtube-grid.grid-container .youtube-video-card {
+    width: 100%;
+  }
+  
+  .youtube-video-card {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .youtube-video-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+  }
+  
+  .youtube-video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+  
+  .youtube-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .youtube-play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.3s ease;
+    padding-left: 3px; /* Offset to visually center the triangle */
+  }
+  
+  .youtube-play-button:hover {
+    background: rgba(255, 0, 0, 0.9);
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  
+  .youtube-video-info {
+    padding: 1rem;
+    background: var(--theme-bg, #fff);
+    color: var(--theme-text, #333);
+  }
+  
+  .youtube-video-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .youtube-video-date {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+  
+  .youtube-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  
+  .youtube-channel {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+    color: var(--theme-accent, #4CAF50);
+  }
+  
+  @media (max-width: 768px) {
+    .youtube-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    .youtube-grid.slider .youtube-video-card {
+      flex: 0 0 280px;
+    }
+    
+    .youtube-play-button {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+    }
+  }
+</style>
+
+{sortedVideos.length > 0 && (
+  <div class="youtube-feed">
+    <h2 class="youtube-feed-title">{title}</h2>
+    <div class={`youtube-grid ${defaultView === 'swipe' ? 'slider panels horizontal-slider' : 'grid-container'}`}>
+      {sortedVideos.map((video) => (
+        <div class="youtube-video-card">
+          <div 
+            class="youtube-video-container video-container" 
+            data-video-id={video.id}
+            data-use-custom-player={useCustomPlayer}
+          >
+            <img
+              src={video.thumbnail}
+              alt={video.title}
+              class="youtube-thumbnail video-thumbnail"
+              loading="lazy"
+              width="480"
+              height="360"
+            />
+            
+            <div class="youtube-play-button play-button" aria-label="Play video">
+              &#x25B6;
+            </div>
+            
+            <div class="youtube-embed" style="display: none;">
+              <YouTubeEmbed
+                url={`https://www.youtube.com/watch?v=${video.id}`}
+                title={video.title}
+                useCustomPlayer={useCustomPlayer}
+                controls={true}
+                mute={false}
+              />
+            </div>
+          </div>
+          
+          {showTitles && (
+            <div class="youtube-video-info">
+              <h3 class="youtube-video-title">{video.title}</h3>
+              <div class="youtube-meta">
+                {video.channelTitle && (
+                  <span class="youtube-channel">{video.channelTitle}</span>
+                )}
+                <time class="youtube-video-date">
+                  {new Date(video.publishDate).toLocaleDateString()}
+                </time>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+<script>
+// This component reuses the same video handling logic from PostPreview
+// The video-container, video-thumbnail, play-button, and youtube-embed classes
+// ensure compatibility with the existing video management system
+</script>

@@ -258,13 +258,11 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     } */
 </style>
 <script>
-  <script>
-// Enhanced video cleanup and management
 (function() {
   'use strict';
   
   // Global function to stop all videos
-  function stopAllVideos(excludeContainer?: Element | null) {
+  function stopAllVideos(excludeContainer?: Element) {
     console.log('Stopping all videos...');
     
     document.querySelectorAll('.video-container').forEach(container => {
@@ -285,12 +283,13 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
         if (iframe) {
           // Store original src before clearing
           if (iframe.src !== 'about:blank') {
-            (iframe as HTMLIFrameElement).dataset.originalSrc = iframe.src;
+            iframe.dataset.originalSrc = iframe.src;
           }
           iframe.src = 'about:blank';
           
           // Try to call the timer cleanup function for this video if it exists
-          const videoId = (container as HTMLElement).dataset.videoId;
+          const containerEl = container as HTMLElement;
+          const videoId = containerEl.dataset.videoId;
           if (videoId && (window as any).resetYouTubeEmbedTimer) {
             try {
               (window as any).resetYouTubeEmbedTimer(videoId);
@@ -306,7 +305,8 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
           upgradeMessage.remove();
         }
         
-        const videoId = (container as HTMLElement).dataset.videoId;
+        const containerEl = container as HTMLElement;
+        const videoId = containerEl.dataset.videoId;
         if (videoId) {
           const specificMessage = document.querySelector(`.compact-upgrade-message-${videoId}`);
           if (specificMessage) {
@@ -325,13 +325,13 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     document.addEventListener('DOMContentLoaded', () => {
       // Small delay to ensure all video containers are rendered
       setTimeout(() => {
-        stopAllVideos();
+        (window as any).stopAllVideos();
       }, 50);
     });
   } else {
     // Document is already loaded
     setTimeout(() => {
-      stopAllVideos();
+      (window as any).stopAllVideos();
     }, 50);
   }
   
@@ -341,17 +341,17 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
   // Detect various navigation scenarios
   window.addEventListener('beforeunload', () => {
     isNavigatingAway = true;
-    stopAllVideos();
+    (window as any).stopAllVideos();
   });
   
   // Handle view transitions
   document.addEventListener('astro:before-preparation', () => {
     isNavigatingAway = true;
-    stopAllVideos();
+    (window as any).stopAllVideos();
   });
   
   document.addEventListener('astro:before-swap', () => {
-    stopAllVideos();
+    (window as any).stopAllVideos();
   });
   
   // Handle back/forward navigation
@@ -359,7 +359,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     if (e.persisted) {
       // Page was loaded from cache, stop all videos
       setTimeout(() => {
-        stopAllVideos();
+        (window as any).stopAllVideos();
       }, 50);
     }
   });
@@ -367,7 +367,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
   // Handle visibility changes (tab switching, etc.)
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      stopAllVideos();
+      (window as any).stopAllVideos();
     }
   });
   
@@ -430,7 +430,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     
     if (shouldSetupHandlers) {
       setTimeout(() => {
-        stopAllVideos();
+        (window as any).stopAllVideos();
         setupVideoHandlers();
       }, 100);
     }
@@ -446,23 +446,23 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
   // Stop all videos when page becomes hidden (user navigates away)
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      stopAllVideos();
+      (window as any).stopAllVideos();
     }
   });
 
   // Stop all videos before page unloads
   window.addEventListener('beforeunload', () => {
-    stopAllVideos();
+    (window as any).stopAllVideos();
   });
 
   // Stop all videos when page is about to be hidden (for view transitions)
   document.addEventListener('astro:before-preparation', () => {
-    stopAllVideos();
+    (window as any).stopAllVideos();
   });
 
   // Also stop videos on pagehide event (for mobile browsers)
   window.addEventListener('pagehide', () => {
-    stopAllVideos();
+    (window as any).stopAllVideos();
   });
 
   // Stop videos when user clicks on navigation links
@@ -471,7 +471,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
     if (target.tagName === 'A' || target.closest('a')) {
       // User is navigating away, stop videos
       setTimeout(() => {
-        stopAllVideos();
+        (window as any).stopAllVideos();
       }, 100);
     }
   });
