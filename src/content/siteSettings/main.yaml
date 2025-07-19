@@ -7,7 +7,7 @@ showHeader: false
 showLogo: true
 showHome: true
 showTheme: true
-showSwitch: true
+showSwitch: false
 showSearch: false
 showFooter: true
 showCheck: true
@@ -17,4 +17,4 @@ enableImageBlur: true
 showSocial: true
 showTags: true
 showShare: true
-videoTimeLimitMinutes: 0.2
+videoTimeLimitMinutes: 0.3
