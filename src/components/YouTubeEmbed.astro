@@ -103,8 +103,48 @@ const playerVars: { [key: string]: number | string } = {
       allowfullscreen
       style="aspect-ratio: 16/9;"
     ></iframe>
+    
+    <!-- Mute toggle button -->
+    <button 
+      class="mute-toggle-btn" 
+      id={`mute-toggle-${videoId}`}
+      aria-label="Toggle mute"
+      style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 4px; padding: 8px; cursor: pointer; font-size: 16px; z-index: 10; opacity: 0; transition: opacity 0.3s ease;"
+    >
+      🔊
+    </button>
   </div>
 )}
+
+<style>
+.iframe-youtube-player:hover .mute-toggle-btn {
+  opacity: 1 !important;
+}
+
+.mute-toggle-btn:hover {
+  background: rgba(0,0,0,0.9) !important;
+}
+</style>
+
+<script>
+// Initialize mute toggle functionality
+document.addEventListener('DOMContentLoaded', () => {
+  const preferences = (window as any).VideoPreferences?.getPreferences() || { muted: false };
+  (window as any).VideoPreferences?.updateAllVideoMuteStates(preferences.muted);
+  
+  // Set up mute toggle buttons
+  document.querySelectorAll('.mute-toggle-btn').forEach((element) => {
+    const btn = element as HTMLButtonElement;
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const currentlyMuted = (window as any).VideoPreferences?.isMuted() || false;
+      (window as any).VideoPreferences?.setMuted(!currentlyMuted);
+    });
+  });
+});
+</script>
 
 <script define:vars={{ videoId, playerVars, start, end, loop, videoTimeLimitMinutes }}>
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;

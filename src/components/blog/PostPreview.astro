@@ -201,7 +201,7 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
                         url={post.data.youtube.value.url || ''}
                         title={post.data.youtube.value.title}
                         controls={post.data.youtube.value.controls}
-                        mute={post.data.youtube.value.mute}
+                        mute={false}
                         loop={post.data.youtube.value.loop}
                         start={post.data.youtube.value.start}
                         end={post.data.youtube.value.end}
@@ -574,6 +574,20 @@ const useCustomPlayer = post.data.youtube?.value?.useCustomPlayer ?? true;
             iframeContainers.forEach((container) => {
                 container.classList.remove('inactive');
             });
+        }
+        
+        // Listen for video preference changes and update mute states
+        window.addEventListener('video-preferences-changed', () => {
+            if ((window as any).VideoPreferences) {
+                const preferences = (window as any).VideoPreferences.getPreferences();
+                (window as any).VideoPreferences.updateAllVideoMuteStates(preferences.muted);
+            }
+        });
+        
+        // Apply initial mute preferences if VideoPreferences is available
+        if ((window as any).VideoPreferences) {
+            const preferences = (window as any).VideoPreferences.getPreferences();
+            (window as any).VideoPreferences.updateAllVideoMuteStates(preferences.muted);
         }
     });
 </script>

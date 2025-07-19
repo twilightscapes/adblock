@@ -397,7 +397,7 @@ const sortedVideos = allVideos
                 title={video.title}
                 useCustomPlayer={useCustomPlayer}
                 controls={true}
-                mute={true}
+                mute={false}
                 autoplay={false}
               />
             </div>
@@ -501,5 +501,40 @@ document.addEventListener('DOMContentLoaded', function() {
       thumbnail.addEventListener('click', clickHandler);
     }
   });
+  
+  // Apply user mute preferences to all YouTube embeds
+  function applyVideoPreferences() {
+    const preferences = (window as any).VideoPreferences?.getPreferences() || { muted: false };
+    
+    // Apply to all iframes in YouTube feeds
+    document.querySelectorAll('.youtube-feed iframe').forEach((iframe) => {
+      const iframeEl = iframe as HTMLIFrameElement;
+      if (iframeEl.src.includes('youtube.com/embed/')) {
+        const currentSrc = iframeEl.src;
+        const url = new URL(currentSrc);
+        
+        // Update mute parameter
+        if (preferences.muted) {
+          url.searchParams.set('mute', '1');
+        } else {
+          url.searchParams.delete('mute');
+        }
+        
+        // Only update if different
+        if (iframeEl.src !== url.toString()) {
+          iframeEl.src = url.toString();
+        }
+      }
+    });
+  }
+  
+  // Apply preferences when component loads
+  if ((window as any).VideoPreferences) {
+    applyVideoPreferences();
+  }
+  
+  // Listen for preference changes
+  window.addEventListener('video-preferences-changed', applyVideoPreferences);
 });
+</script>
 </script>
