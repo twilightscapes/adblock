@@ -5,7 +5,11 @@ import keystaticConfig from '../../keystatic.config';
 import GalleryLightbox from './GalleryLightbox.jsx';
 import { getEntry } from 'astro:content';
 
-import Switch from "@/components/ViewModeSwitch.jsx";
+interface Props {
+  sectionId?: string;
+}
+
+const { sectionId = 'photo-gallery' } = Astro.props;
 
 
 // Default values
@@ -85,7 +89,6 @@ const directories = [
 
 const showCaptions = photoSettings?.showCaptions ?? true;
 const showGallerySelector = photoSettings?.showGallerySelector && galleryMode === 'directory';
-const showSwitch = photoSettings?.showSwitch;
 
 const images = allImages.map(img => ({
   src: img.src,
@@ -115,17 +118,13 @@ const processedImages = allImages.map(image => ({
       ))}
     </select>
     )}
-    
-    {showSwitch && (
-    <div class="switcher" style={{marginTop:'10px'}}><Switch client:load sectionId="photo-gallery" defaultView={defaultView} /></div>
-    )}
   </div>
 
 
 
 
 
-<div data-section-id="photo-gallery">
+<div data-section-id={sectionId}>
 <div class={`homegallery contentpanel section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`} style="padding-top:20px;">
   <div class="sliderSpacer" style={{ height: "", paddingTop: "", display: "" }} />
 

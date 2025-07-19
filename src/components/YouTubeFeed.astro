@@ -1,33 +1,30 @@
 ---
 import YouTubeEmbed from './YouTubeEmbed.astro';
-import ViewModeSwitch from './ViewModeSwitch.jsx';
 
 interface Props {
-  channelIds?: string[];
-  channelId?: string; // Backward compatibility
+  channelIds: string;
   maxVideos?: number;
   title?: string;
   showTitles?: boolean;
-  showSectionTitle?: boolean; // New prop to control section title visibility
+  showSectionTitle?: boolean;
   useCustomPlayer?: boolean;
-  defaultView?: 'grid' | 'swipe';
-  sectionId?: string; // Unique ID for this section
+  defaultView?: string;
+  sectionId?: string;
 }
 
-const { 
-  channelIds = [],
-  channelId,
-  maxVideos = 6,
-  title = "Latest YouTube Videos",
+const {
+  channelIds,
+  maxVideos = 5,
+  title = "Latest Videos",
   showTitles = true,
-  showSectionTitle = true, // Default to showing section titles
+  showSectionTitle = true,
   useCustomPlayer = false,
-  defaultView = 'grid',
-  sectionId = `youtube-feed-${Math.random().toString(36).substr(2, 9)}` // Generate unique ID if not provided
+  defaultView = "grid",
+  sectionId = "youtube-feed"
 } = Astro.props;
 
-// Combine channelId and channelIds for backward compatibility
-const allChannelIds = channelId ? [channelId, ...channelIds] : channelIds;
+// Convert channelIds string to array if needed
+const channelIdsArray = Array.isArray(channelIds) ? channelIds : channelIds.split(',').map(id => id.trim());
 
 // Default channels if none provided (popular tech/educational channels)
 const defaultChannels = [
@@ -36,7 +33,7 @@ const defaultChannels = [
   "UCsooa4yRKGN_zEE8iknghZA"  // TED-Ed
 ];
 
-const finalChannelIds = allChannelIds.length > 0 ? allChannelIds : defaultChannels;
+const finalChannelIds = channelIdsArray.length > 0 ? channelIdsArray : defaultChannels;
 
 interface YouTubeVideo {
   id: string;
@@ -364,11 +361,6 @@ const sortedVideos = allVideos
   <div class="youtube-feed" data-section-id={sectionId}>
     <div class="youtube-feed-header">
       {showSectionTitle && <h2 class="youtube-feed-title">{title}</h2>}
-      <ViewModeSwitch 
-        sectionId={sectionId} 
-        defaultView={defaultView} 
-        client:load
-      />
     </div>
     <div class={`youtube-grid section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`}>
       {sortedVideos.map((video) => (

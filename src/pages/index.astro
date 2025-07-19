@@ -6,7 +6,7 @@ import Faqs from "@/components/Faqs.astro";
 import Testimonials from '../components/Testimonials.astro';
 import Feature from "@/components/Feature.astro";
 import Bio from "@/components/Bio.astro";
-import { getEntry } from 'astro:content';
+import { getEntry, getCollection } from 'astro:content';
 import keystaticConfig from '../../keystatic.config';
 import { createReader } from '@keystatic/core/reader';
 import CTAs from '@/components/CTAs.astro';
@@ -209,6 +209,10 @@ const legacyYoutubeFeed = await loadYoutubeFeed(homepageData?.youtubeFeedSection
 const allPosts = await getAllPosts();
 const allPostsSorted = sortMDByDate(allPosts).slice(0, MAX_POSTS || 5);
 
+// Load testimonials
+const allTestimonials = await getCollection('testimonials');
+const sortedTestimonials = allTestimonials.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+
 const meta = {
 	description: "Welcome to my personal website",
 	title: "Home",
@@ -348,23 +352,23 @@ flex-direction: column;
 							const appShowTitle = showTitle;
 							
 							return (
-								<>
+								<div data-section-id="app-section">
 									{appShowTitle && (appTitle || appDescription) && (
-										<div style="text-align: center; margin-bottom: 2rem;">
-											{appTitle && (
-												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${appDescription ? '1rem' : '0'};`}>
+										<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${appDescription ? '1rem' : '0'};`}>
 													{appTitle}
 												</h2>
-											)}
-											{appDescription && (
-												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-													{appDescription}
-												</p>
-											)}
+												{appDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{appDescription}
+													</p>
+												)}
+											</div>
 										</div>
 									)}
 									<App />
-								</>
+								</div>
 							);
 						case 'gallery':
 							// Use the section's own title/description settings
@@ -373,23 +377,28 @@ flex-direction: column;
 							const galleryShowTitle = showTitle;
 							
 							return (
-								<>
+								<div data-section-id="gallery-section">
 									{galleryShowTitle && (galleryTitle || galleryDescription) && (
-										<div style="text-align: center; margin-bottom: 2rem;">
-											{galleryTitle && (
-												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${galleryDescription ? '1rem' : '0'};`}>
+										<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${galleryDescription ? '1rem' : '0'};`}>
 													{galleryTitle}
 												</h2>
-											)}
-											{galleryDescription && (
-												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-													{galleryDescription}
-												</p>
-											)}
+												{galleryDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{galleryDescription}
+													</p>
+												)}
+											</div>
+											<ViewModeSwitch 
+												sectionId={`gallery-section-${index}`}
+												defaultView="grid"
+												client:load
+											/>
 										</div>
 									)}
-									<PhotoSection />
-								</>
+									<PhotoSection sectionId={`gallery-section-${index}`} />
+								</div>
 							);
 						case 'resume':
 							// Use the section's own title/description settings
@@ -398,19 +407,19 @@ flex-direction: column;
 							const resumeShowTitle = showTitle;
 							
 							return (
-								<div>
+								<div data-section-id="resume-section">
 									{resumeShowTitle && (resumeTitle || resumeDescription) && (
-										<div style="text-align: center; margin-bottom: 2rem;">
-											{resumeTitle && (
-												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${resumeDescription ? '1rem' : '0'};`}>
+										<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${resumeDescription ? '1rem' : '0'};`}>
 													{resumeTitle}
 												</h2>
-											)}
-											{resumeDescription && (
-												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-													{resumeDescription}
-												</p>
-											)}
+												{resumeDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{resumeDescription}
+													</p>
+												)}
+											</div>
 										</div>
 									)}
 									<Resume 
@@ -447,7 +456,7 @@ flex-direction: column;
 										/>
 									</div>
 									
-									<div style="padding:0 3%" class={`contentpanel section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`}>
+									<div style="padding:0 3%" class="contentpanel section-content grid-container" data-section-id="posts-section">
 										{allPostsSorted.map((p) => <PostPreview post={p} withDesc />)}
 										{ShowMore && (
 											<a class="viewmore no-underline text-white text-center block" href="/posts/" style="padding:1vh 1rem; margin:0 50px 50px 50px;">
@@ -464,23 +473,23 @@ flex-direction: column;
 							const faqShowTitle = showTitle;
 							
 							return (
-								<>
+								<div data-section-id="faq-section">
 									{faqShowTitle && (faqTitle || faqDescription) && (
-										<div style="text-align: center; margin-bottom: 2rem;">
-											{faqTitle && (
-												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${faqDescription ? '1rem' : '0'};`}>
+										<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${faqDescription ? '1rem' : '0'};`}>
 													{faqTitle}
 												</h2>
-											)}
-											{faqDescription && (
-												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-													{faqDescription}
-												</p>
-											)}
+												{faqDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{faqDescription}
+													</p>
+												)}
+											</div>
 										</div>
 									)}
 									<Faqs />
-								</>
+								</div>
 							);
 						case 'testimonials':
 							// Use the section's own title/description settings
@@ -489,22 +498,30 @@ flex-direction: column;
 							const testimonialsShowTitle = showTitle;
 							
 							return (
-								<div class="testi" style="">
+								<div class="testi" data-section-id={`testimonials-section-${index}`}>
 									{testimonialsShowTitle && (testimonialsTitle || testimonialsDescription) && (
-										<div style="text-align: center; margin-bottom: 2rem;">
-											{testimonialsTitle && (
-												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${testimonialsDescription ? '1rem' : '0'};`}>
+										<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${testimonialsDescription ? '1rem' : '0'};`}>
 													{testimonialsTitle}
 												</h2>
-											)}
-											{testimonialsDescription && (
-												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-													{testimonialsDescription}
-												</p>
-											)}
+												{testimonialsDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{testimonialsDescription}
+													</p>
+												)}
+											</div>
+											<ViewModeSwitch 
+												sectionId={`testimonials-section-${index}`}
+												defaultView="grid"
+												client:load
+											/>
 										</div>
 									)}
-									<Testimonials />
+									<div class="contentpanel section-content grid-container" style="padding:0;">
+										<div class="sliderSpacer" style={{ height: "", paddingTop: "", display: "" }} />
+										<Testimonials testimonials={sortedTestimonials} />
+									</div>
 								</div>
 							);
 						case 'youtubefeeds':
@@ -514,19 +531,19 @@ flex-direction: column;
 							const youtubeFeedShowTitle = showTitle;
 							
 							return (
-								<div>
+								<div data-section-id="youtubefeeds-section">
 									{youtubeFeedShowTitle && (youtubeFeedTitle || youtubeFeedDescription) && (
-										<div style="text-align: center; margin-bottom: 2rem;">
-											{youtubeFeedTitle && (
-												<h2 class="glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style={`margin-bottom: ${youtubeFeedDescription ? '1rem' : '0'};`}>
+										<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+											<div style="flex: 1;">
+												<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${youtubeFeedDescription ? '1rem' : '0'};`}>
 													{youtubeFeedTitle}
 												</h2>
-											)}
-											{youtubeFeedDescription && (
-												<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-													{youtubeFeedDescription}
-												</p>
-											)}
+												{youtubeFeedDescription && (
+													<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; margin: 0;">
+														{youtubeFeedDescription}
+													</p>
+												)}
+											</div>
 										</div>
 									)}
 									{validYoutubeFeedSections.map((feedData, feedIndex) => {
@@ -539,17 +556,24 @@ flex-direction: column;
 										return (
 											<div style="margin-bottom: 3rem;">
 												{showFeedTitle && (feedTitle || feedDescription) && (
-													<div style="text-align: center; margin-bottom: 1.5rem;">
-														{feedTitle && (
-															<h3 style="font-size: 1.8rem; color: var(--theme-accent); margin-bottom: 0.5rem;">
-																{feedTitle}
-															</h3>
-														)}
-														{feedDescription && (
-															<p style="font-size: 1.1rem; color: var(--theme-text); opacity: 0.7;">
-																{feedDescription}
-															</p>
-														)}
+													<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding: 0 3%;">
+														<div style="flex: 1;">
+															{feedTitle && (
+																<h3 class="posties glow text-[clamp(1.2rem,2.5vw,2rem)] shadow-text theme-accent backdrop-blur-lg" style={`margin: 0; margin-bottom: ${feedDescription ? '0.5rem' : '0'}; font-weight: 600;`}>
+																	{feedTitle}
+																</h3>
+															)}
+															{feedDescription && (
+																<p style="font-size: 1rem; color: var(--theme-text); opacity: 0.7; margin: 0;">
+																	{feedDescription}
+																</p>
+															)}
+														</div>
+														<ViewModeSwitch 
+															sectionId={`youtube-feed-section-${index}-${feedIndex}`}
+															defaultView={feedData.defaultView || "grid"}
+															client:load
+														/>
 													</div>
 												)}
 												<YouTubeFeed 

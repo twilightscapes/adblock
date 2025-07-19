@@ -523,17 +523,9 @@ export default config({
                 { label: 'Resume Section', value: 'resume' },
                 { label: 'FAQ Section', value: 'faq' },
                 { label: 'Testimonials Section', value: 'testimonials' },
-                { label: 'YouTube Feeds', value: 'youtubefeeds' },
-                { label: 'Content Block', value: 'contentblock' }
+                { label: 'YouTube Feeds', value: 'youtubefeeds' }
               ],
               defaultValue: 'feature'
-            }),
-            // For content blocks - select which block to use
-            contentBlockId: fields.relationship({
-              label: 'Content Block',
-              description: 'Select which content block to display (only used for Content Block sections)',
-              collection: 'pitches',
-              validation: { isRequired: false }
             }),
             customTitle: fields.text({
               label: 'Custom Section Title (Optional)',
@@ -557,7 +549,6 @@ export default config({
             itemLabel: (props) => {
               const sectionType = props.fields.sectionType.value;
               const customTitle = props.fields.customTitle.value;
-              const contentBlockId = props.fields.contentBlockId.value;
               
               // Get the section label from the options
               const sectionLabels = {
@@ -570,16 +561,10 @@ export default config({
                 'resume': 'Resume Section',
                 'faq': 'FAQ Section',
                 'testimonials': 'Testimonials Section',
-                'youtubefeeds': 'YouTube Feeds',
-                'contentblock': 'Content Block'
+                'youtubefeeds': 'YouTube Feeds'
               };
               
               const baseLabel = sectionLabels[sectionType] || sectionType;
-              
-              // For content blocks, show the block ID if available
-              if (sectionType === 'contentblock' && contentBlockId) {
-                return `${baseLabel}: ${contentBlockId}`;
-              }
               
               return customTitle ? `${baseLabel}: ${customTitle}` : baseLabel;
             }

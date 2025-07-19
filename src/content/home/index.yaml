@@ -1,4 +1,7 @@
 sectionOrdering:
+  - sectionType: youtubefeeds
+    customTitle: test
+    showTitle: true
   - sectionType: bio
     showTitle: false
   - sectionType: youtubefeeds
@@ -16,7 +19,6 @@ sectionOrdering:
   - sectionType: faq
     showTitle: true
   - sectionType: posts
-    contentBlockId: Life's too short to watch ads!
     showTitle: true
 allYoutubeFeedSections:
   - feedConfig: trending-content

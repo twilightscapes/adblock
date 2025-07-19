@@ -70,7 +70,6 @@ export const collections = {
     schema: z.object({
       sectionOrdering: z.array(z.object({
         sectionType: z.string(),
-        contentBlockId: z.string().optional(),
         customTitle: z.string().optional(),
         customDescription: z.string().optional(),
         showTitle: z.boolean().optional(),
