@@ -4,11 +4,12 @@ borderRadius: 10px
 lightBg: rgba(192, 185, 185, 0.57)
 lightAccent2: rgba(0, 0, 0, 1)
 darkBg: rgba(34, 34, 34, 1)
-darkAccent2: rgba(0, 0, 0, 1)
+darkAccent2: rgba(22, 19, 71, 1)
 lightHeader: rgba(0, 0, 0, 0.9)
 darkHeader: rgba(0, 0, 0, 0.9)
 lightText: rgba(0, 0, 0, 1)
 darkText: rgba(243, 231, 231, 1)
 customCSS: >-
   .backimage{ max-height:40vh; margin-top: 30vh; object-fit: contain
-  !important;  opacity:.2 ; }
+  !important;  opacity:.2 ; } .bodywrap{padding:2rem; max-width: 1000px; margin:
+  0 auto;}

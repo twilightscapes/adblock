@@ -34,21 +34,21 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
     font-size: clamp(2.5rem, 3vw, 4rem);
     font-weight: 700;
     margin-bottom: 1rem;
-    background: linear-gradient(45deg, var(--theme-accent), var(--theme-accent-2, #af514c), #FF6B6B);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    /* background: linear-gradient(45deg, var(--theme-accent), var(--theme-accent-2, #af514c), #FF6B6B);
+    background-clip: text; */
+    /* -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; */
+    /* text-shadow: 0 4px 8px rgba(0,0,0,0.3); */
     letter-spacing: -0.02em;
     animation: titleGlow 3s ease-in-out infinite alternate;
   }
 
   @keyframes titleGlow {
     from {
-      filter: drop-shadow(0 0 10px rgba(76, 175, 80, 0.3));
+      filter: drop-shadow(0 0 10px rgba(135, 31, 31, 0.3));
     }
     to {
-      filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.6));
+      filter: drop-shadow(0 0 20px rgba(249, 22, 75, 0.6));
     }
   }
 
@@ -66,7 +66,7 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
     width: 100%;
     max-width: 700px;
     margin-bottom: 2rem;
-    animation: formFloat 6s ease-in-out infinite;
+    /* animation: formFloat 6s ease-in-out infinite; */
   }
 
   @keyframes formFloat {
@@ -83,7 +83,7 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
     max-width: 500px;
     padding: 1rem .1rem;
     font-size: clamp(1.1rem, 2.8vw, 1.4rem);
-    border: 3px solid var(--theme-ui-colors-siteColor, #4CAF50);
+    border: 3px solid ;
     border-radius: 60px;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
@@ -102,22 +102,22 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
   .you-form-input:focus {
     border-color: var(--theme-accent, #4CAF50);
     background: rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    /* box-shadow: 
       0 0 0 4px rgba(76, 175, 80, 0.3),
       0 16px 40px rgba(0, 0, 0, 0.2),
       0 0 0 1px rgba(255, 255, 255, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      inset 0 1px 0 rgba(255, 255, 255, 0.2); */
     transform: translateY(-3px) scale(1.02);
   }
 
   .you-form-input::placeholder {
-
+    color:#666;
     transition: all 0.3s ease;
     font-weight: 300;
   }
 
   .you-form-input:focus::placeholder {
-    opacity: 0.3;
+    /* opacity: 0.3; */
     transform: translateY(-2px);
   }
 
@@ -126,8 +126,8 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
     right: 110px;
     top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(45deg, var(--theme-accent, #4caf53), #45a06b);
-    color: white;
+    /* background: linear-gradient(45deg, var(--theme-accent, #4caf53), #45a06b);
+    color: white; */
     border: none;
     padding: 0.8rem 1.5rem;
     border-radius: 30px;
@@ -135,17 +135,17 @@ console.log('YouForm Props received:', { title, description, placeholder, showTi
     font-size: 1rem;
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
+    /* box-shadow: 
       0 4px 12px rgba(76, 175, 80, 0.4),
-      0 0 0 1px rgba(255, 255, 255, 0.1);
+      0 0 0 1px rgba(255, 255, 255, 0.1); */
     white-space: nowrap;
   }
 
   .clipboard-button:hover {
     transform: translateY(-50%) scale(1.08);
-    box-shadow: 
+    /* box-shadow: 
       0 6px 20px rgba(76, 175, 80, 0.6),
-      0 0 0 1px rgba(255, 255, 255, 0.2);
+      0 0 0 1px rgba(255, 255, 255, 0.2); */
   }
 
   .clipboard-button:active {

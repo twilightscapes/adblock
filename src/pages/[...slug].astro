@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 		// Try to get posts, but don't fail if collection doesn't exist
 		let posts = [];
 		try {
-			posts = await getCollection("posts");
+			posts = await getCollection("post");
 		} catch (e) {
 			console.warn("Posts collection not available:", e);
 		}
@@ -42,10 +42,10 @@ export async function getStaticPaths() {
 }
 
 type Props = {
-	entry: CollectionEntry<"pages" | "posts">;
+	entry: CollectionEntry<"pages"> | CollectionEntry<any>;
 };
 
-const { entry } = Astro.props;
+const { entry } = Astro.props as Props;
 if (!entry) return Astro.redirect("/404");
 
 let Content;
@@ -58,7 +58,7 @@ try {
 ---
 
 <PageLayout>
-	<article>
+	<article class="bodywrap">
 		<h1>{entry.data.title}</h1>
 		<Content />
 	</article>
