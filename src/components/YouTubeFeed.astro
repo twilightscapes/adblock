@@ -243,6 +243,12 @@ const sortedVideos = allVideos
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
   }
   
+  /* Disable hover effects in slider mode to prevent layout jumping */
+  .youtube-grid.slider .youtube-video-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
   .youtube-thumbnail {
     width: 100%;
     height: 100%;
