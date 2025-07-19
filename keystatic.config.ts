@@ -200,6 +200,11 @@ export default config({
           description: 'Display video titles and channel info below thumbnails',
           defaultValue: true
         }),
+        showSectionTitle: fields.checkbox({ 
+          label: 'Show Section Title',
+          description: 'Display the main section title above the video grid',
+          defaultValue: true
+        }),
         useCustomPlayer: fields.checkbox({ 
           label: 'Use Custom Player',
           description: 'Use custom video controls instead of YouTube iframe',

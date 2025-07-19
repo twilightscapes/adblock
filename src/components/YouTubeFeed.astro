@@ -1,5 +1,6 @@
 ---
 import YouTubeEmbed from './YouTubeEmbed.astro';
+import ViewModeSwitch from './ViewModeSwitch.jsx';
 
 interface Props {
   channelIds?: string[];
@@ -7,8 +8,10 @@ interface Props {
   maxVideos?: number;
   title?: string;
   showTitles?: boolean;
+  showSectionTitle?: boolean; // New prop to control section title visibility
   useCustomPlayer?: boolean;
   defaultView?: 'grid' | 'swipe';
+  sectionId?: string; // Unique ID for this section
 }
 
 const { 
@@ -17,8 +20,10 @@ const {
   maxVideos = 6,
   title = "Latest YouTube Videos",
   showTitles = true,
+  showSectionTitle = true, // Default to showing section titles
   useCustomPlayer = false,
-  defaultView = 'grid'
+  defaultView = 'grid',
+  sectionId = `youtube-feed-${Math.random().toString(36).substr(2, 9)}` // Generate unique ID if not provided
 } = Astro.props;
 
 // Combine channelId and channelIds for backward compatibility
@@ -131,46 +136,77 @@ const sortedVideos = allVideos
 <style>
   .youtube-feed {
     width: 100%;
-    padding: 2rem 1rem;
+    padding: 1rem 0.5rem; /* Reduced padding */
+  }
+  
+  .youtube-feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
   }
   
   .youtube-feed-title {
     font-size: clamp(1.8rem, 3vw, 2.5rem);
     font-weight: 700;
-    text-align: center;
-    margin-bottom: 2rem;
     background: linear-gradient(45deg, var(--theme-accent), #FF6B6B);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    margin: 0;
+    flex: 1;
   }
   
   .youtube-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Bigger minimum size, fewer columns */
+    gap: 1rem; /* Reduced gap */
+    width: 100%; /* Remove max-width constraint */
+    margin: 0;
   }
   
   /* Slider/Swipe mode styles */
   .youtube-grid.slider {
     display: flex;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    overflow-y: visible;
+    scroll-snap-type: none;
     gap: 1rem;
-    padding: 0 1rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    padding: 0 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-accent, #4CAF50) transparent;
+    -webkit-overflow-scrolling: touch;
+    /* Ensure scroll events are captured */
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+    /* Add pointer events to ensure wheel events are captured */
+    pointer-events: auto;
   }
   
   .youtube-grid.slider::-webkit-scrollbar {
-    display: none;
+    height: 8px;
+  }
+  
+  .youtube-grid.slider::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  .youtube-grid.slider::-webkit-scrollbar-thumb {
+    background: var(--theme-accent, #4CAF50);
+    border-radius: 4px;
+  }
+  
+  .youtube-grid.slider::-webkit-scrollbar-thumb:hover {
+    background: var(--theme-accent-hover, #45a049);
   }
   
   .youtube-grid.slider .youtube-video-card {
-    flex: 0 0 300px;
-    scroll-snap-align: start;
+    flex: 0 0 auto;
+    width: 80vw;
+    min-width: 80vw;
+    scroll-snap-align: center;
   }
   
   /* Grid mode styles */
@@ -239,7 +275,7 @@ const sortedVideos = allVideos
   }
   
   .youtube-video-info {
-    padding: 1rem;
+    padding: 0.75rem; /* Reduced padding */
     background: var(--theme-bg, #fff);
     color: var(--theme-text, #333);
   }
@@ -273,14 +309,26 @@ const sortedVideos = allVideos
     color: var(--theme-accent, #4CAF50);
   }
   
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .youtube-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Slightly smaller for tablets */
     }
     
     .youtube-grid.slider .youtube-video-card {
-      flex: 0 0 280px;
+      width: 85vw;
+      min-width: 85vw;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .youtube-grid {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive but still bigger than before */
+      gap: 0.75rem;
+    }
+    
+    .youtube-grid.slider .youtube-video-card {
+      width: 90vw;
+      min-width: 90vw;
     }
     
     .youtube-play-button {
@@ -288,13 +336,35 @@ const sortedVideos = allVideos
       height: 50px;
       font-size: 20px;
     }
+    
+    .youtube-feed {
+      padding: 0.75rem 0.25rem; /* Reduced mobile padding */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .youtube-grid {
+      grid-template-columns: 1fr; /* Single column on very small screens */
+    }
+    
+    .youtube-grid.slider .youtube-video-card {
+      width: 95vw;
+      min-width: 95vw;
+    }
   }
 </style>
 
 {sortedVideos.length > 0 && (
-  <div class="youtube-feed">
-    <h2 class="youtube-feed-title">{title}</h2>
-    <div class={`youtube-grid ${defaultView === 'swipe' ? 'slider panels horizontal-slider' : 'grid-container'}`}>
+  <div class="youtube-feed" data-section-id={sectionId}>
+    <div class="youtube-feed-header">
+      {showSectionTitle && <h2 class="youtube-feed-title">{title}</h2>}
+      <ViewModeSwitch 
+        sectionId={sectionId} 
+        defaultView={defaultView} 
+        client:load
+      />
+    </div>
+    <div class={`youtube-grid section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`}>
       {sortedVideos.map((video) => (
         <div class="youtube-video-card">
           <div 

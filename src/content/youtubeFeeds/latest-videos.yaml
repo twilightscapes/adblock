@@ -4,5 +4,6 @@ channelIds:
   - UCBJycsmduvYEL83R_U4JriQ  # Marques Brownlee
 maxVideos: 6
 showTitles: true
+showSectionTitle: true
 useCustomPlayer: false
 defaultView: grid

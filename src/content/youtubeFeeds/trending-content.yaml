@@ -7,5 +7,6 @@ channelIds:
   - UC6nSFpj9HTCZ5t-N3Rm3-HA
 maxVideos: 24
 showTitles: true
+showSectionTitle: true
 useCustomPlayer: false
-defaultView: grid
+defaultView: swipe

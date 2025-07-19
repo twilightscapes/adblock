@@ -334,7 +334,7 @@ button.topper{background:var(--theme-header) !important;}
 		-webkit-overflow-scrolling: touch;
 		gap: 5vw;
 		overscroll-behavior: contain;
-		scroll-snap-type: y mandatory;
+		scroll-snap-type: none;
 		transition: transform .3s;
 		margin: 0;
 		overflow-x: scroll;
@@ -360,11 +360,6 @@ button.topper{background:var(--theme-header) !important;}
 		top: 0;
 	  }
 	  
-	  .slider .post-card1 {
-		scroll-snap-align: center;
-
-	  }
-
 
 	  .grid-container .topblock, .grid-container .botblock{height:0 !important;}
 	  .grid-container .video-title{font-size: 80%;}

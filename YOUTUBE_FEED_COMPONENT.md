@@ -127,11 +127,32 @@ This ensures:
 
 ## Styling
 
-The component includes its own styling but respects your theme variables:
+The component includes optimized styling for maximum video visibility:
+
+**Layout Improvements**:
+- **No max-width constraint**: Videos use the full available width
+- **Bigger video panels**: Minimum 400px width (up from 300px) for better viewing
+- **Fewer columns, larger videos**: Prioritizes video size over quantity per row
+- **Reduced padding**: More space allocated to actual video content
+- **Proper 16:9 aspect ratio**: Maintained across all display modes
+
+**Responsive Design**:
+- **Desktop**: 400px minimum width per video
+- **Tablet (1024px)**: 350px minimum width per video  
+- **Mobile (768px)**: 300px minimum width, optimized spacing
+- **Small mobile (480px)**: Single column layout, maintains video quality
+
+**Swipe Mode Enhancements**:
+- **Larger cards**: 400px width (up from 300px) for better viewing experience
+- **Proper aspect ratios**: 16:9 maintained instead of tall/narrow videos
+- **Smooth scrolling**: Optimized for touch navigation
+- **Better mobile experience**: 320px cards on mobile devices
+
+**Theme Integration**:
 - Uses `--theme-accent` for channel names
-- Responsive grid layout
-- Hover effects and animations
-- Mobile-optimized play buttons
+- Respects theme background and text colors
+- Smooth hover effects and animations
+- Red border indicator for playing videos
 
 ## Error Handling
 

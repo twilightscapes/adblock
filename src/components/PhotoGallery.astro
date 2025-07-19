@@ -5,7 +5,7 @@ import keystaticConfig from '../../keystatic.config';
 import GalleryLightbox from './GalleryLightbox.jsx';
 import { getEntry } from 'astro:content';
 
-import Switch from "@/components/Switch.jsx";
+import Switch from "@/components/ViewModeSwitch.jsx";
 
 
 // Default values
@@ -117,7 +117,7 @@ const processedImages = allImages.map(image => ({
     )}
     
     {showSwitch && (
-    <div class="switcher" style={{marginTop:'10px'}}><Switch client:load defaultView={defaultView} /></div>
+    <div class="switcher" style={{marginTop:'10px'}}><Switch client:load sectionId="photo-gallery" defaultView={defaultView} /></div>
     )}
   </div>
 
@@ -125,7 +125,8 @@ const processedImages = allImages.map(image => ({
 
 
 
-<div class={`homegallery contentpanel ${defaultView === 'swipe' ? 'slider panels horizontal-slider' : 'grid-container'}`} style="padding-top:20px;">
+<div data-section-id="photo-gallery">
+<div class={`homegallery contentpanel section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`} style="padding-top:20px;">
   <div class="sliderSpacer" style={{ height: "", paddingTop: "", display: "" }} />
 
 
@@ -147,6 +148,7 @@ const processedImages = allImages.map(image => ({
       )}
     </div>
   ))}
+</div>
 </div>
 
 <!-- Pass only processed data to client component -->

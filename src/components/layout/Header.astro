@@ -1,7 +1,6 @@
 ---
 import ThemeToggle from "../ThemeToggle.astro";
 import Search from "../Search.astro";
-import Switch from "@/components/Switch.jsx";
 // import BlueCheck from "@/components/BlueCheck.astro";
 import { getEntry, getCollection } from 'astro:content';
 import { siteConfig } from "@/site-config";
@@ -128,7 +127,6 @@ const url = new URL(Astro.request.url);
 
   {showTheme && <ThemeToggle style="margin-left:1vw;" />}
   {showSearch && <Search />}
-  {showSwitch && <Switch client:load defaultView={defaultView} />}
 
   
 

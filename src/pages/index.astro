@@ -15,6 +15,7 @@ import InfoBlock from "@/components/InfoBlock.astro";
 import Resume from '@/components/Resume.astro';
 import YouForm from '@/components/YouForm.astro';
 import YouTubeFeed from "@/components/YouTubeFeed.astro";
+import ViewModeSwitch from "@/components/ViewModeSwitch.jsx";
 
 
 import PhotoSection from "@/components/PhotoGallery.astro"
@@ -149,6 +150,7 @@ interface YouTubeFeedData {
   channelIds: string[];
   maxVideos: number;
   showTitles: boolean;
+  showSectionTitle?: boolean;
   useCustomPlayer: boolean;
   defaultView: 'grid' | 'swipe';
 }
@@ -166,6 +168,7 @@ async function loadYoutubeFeed(slug: string | undefined): Promise<YouTubeFeedDat
     channelIds: feedData.channelIds ?? [],
     maxVideos: feedData.maxVideos ?? 6,
     showTitles: feedData.showTitles ?? true,
+    showSectionTitle: feedData.showSectionTitle ?? true,
     useCustomPlayer: feedData.useCustomPlayer ?? false,
     defaultView: feedData.defaultView ?? 'grid'
   };
@@ -183,6 +186,7 @@ const youtubeFeedSections = await Promise.all(
       ...feedData,
       customTitle: section.customTitle,
       displayTitle: section.customTitle || feedData.title,
+      showSectionTitle: feedData.showSectionTitle ?? true,
       sectionIndex: index
     };
   })
@@ -384,32 +388,38 @@ flex-direction: column;
 										maxVideos={feedData.maxVideos}
 										title={feedData.title}
 										showTitles={feedData.showTitles}
+										showSectionTitle={feedData.showSectionTitle ?? true}
 										useCustomPlayer={feedData.useCustomPlayer}
 										defaultView={feedData.defaultView}
+										sectionId="youtube-feed-legacy"
 									/>
 								</div>
 							);
               case 'posts':
 							return (
-								<>
+								<div data-section-id="posts-section">
+									<div class="posts-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding: 0 3%;">
+										{homeData.postsectiontitle && (
+											<h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text theme-accent backdrop-blur-lg" style="margin: 0; flex: 1;">
+												{homeData.postsectiontitle}
+											</h2>
+										)}
+										<ViewModeSwitch 
+											sectionId="posts-section" 
+											defaultView={defaultView} 
+											client:load
+										/>
+									</div>
 									
-									<div style="padding:2vh 3%" class={`contentpanel ${defaultView === 'swipe' ? 'slider panels horizontal-slider' : 'grid-container'}`}>
-									
-                    
-                    {homeData.postsectiontitle && (
-                      <h2 class="posties glow text-[clamp(1.4rem,3.9vw,4rem)] shadow-text text-center theme-accent backdrop-blur-lg" style="display:grid; place-content:center; margin-bottom:2vh; min-width:50%; width:100%;">
-                        {homeData.postsectiontitle}
-                      </h2>
-                    )}
-
-                    {allPostsSorted.map((p) => <PostPreview post={p} withDesc />)}
+									<div style="padding:0 3%" class={`contentpanel section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`}>
+										{allPostsSorted.map((p) => <PostPreview post={p} withDesc />)}
 										{ShowMore && (
 											<a class="viewmore no-underline text-white text-center block" href="/posts/" style="padding:1vh 1rem; margin:0 50px 50px 50px;">
-                        {language?.data?.viewmore}
+												{language?.data?.viewmore}
 											</a>
 										)}
 									</div>
-								</>
+								</div>
 							);
 						case 'faq':
 							return (
@@ -458,8 +468,10 @@ flex-direction: column;
           maxVideos={feedSection.maxVideos}
           title={feedSection.displayTitle}
           showTitles={feedSection.showTitles}
+          showSectionTitle={feedSection.showSectionTitle ?? true}
           useCustomPlayer={feedSection.useCustomPlayer}
           defaultView={feedSection.defaultView}
+          sectionId={`youtube-feed-${feedSection.sectionIndex}`}
         />
       </div>
     </section>
