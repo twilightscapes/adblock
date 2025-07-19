@@ -1,5 +1,6 @@
 sectionOrdering:
   - youform
+  - posts
 youtubeFeedSections:
   - feedConfig: trending-content
     customTitle: Fuck yea

@@ -77,6 +77,7 @@ const paginationProps = {
 
 			<section aria-label="Blog post list">
 				<div class={`contentpanel section-content ${defaultView === 'swipe' ? 'slider' : 'grid-container'}`}>
+					<div class="sliderSpacer"></div>
 					{
 						page.data.map((p) => (
 							<PostPreview post={p} withDesc />
