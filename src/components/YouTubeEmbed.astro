@@ -17,6 +17,7 @@ interface Props {
   start?: number;
   end?: number;
   useCustomPlayer?: boolean;
+  autoplay?: boolean;
 }
 
 
@@ -28,7 +29,8 @@ const {
   loop = false, 
   start = typeof Astro.props.start === 'number' ? Astro.props.start : 0,
   end = 0,
-  useCustomPlayer = true 
+  useCustomPlayer = true,
+  autoplay = true
 } = Astro.props;
 
 function getYouTubeId(url: string) {
@@ -40,7 +42,7 @@ function getYouTubeId(url: string) {
 
 const videoId = getYouTubeId(url);
 const playerVars: { [key: string]: number | string } = {
-  autoplay: 1,
+  autoplay: autoplay ? 1 : 0,
   controls: controls ? 1 : 0,
   mute: mute ? 1 : 0,
   loop: loop ? 1 : 0,
@@ -94,7 +96,7 @@ const playerVars: { [key: string]: number | string } = {
       id={`youtube-iframe-${videoId}`}
       width="100%"
       height="100%"
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&enablejsapi=1&playsinline=1&modestbranding=1&rel=0&showinfo=0&fs=0&endscreen=0`}
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&playlist=${videoId}&controls=${controls ? 1 : 0}&mute=${mute ? 1 : 0}&loop=${loop ? 1 : 0}&start=${start}&end=${end}&enablejsapi=1&playsinline=1&modestbranding=1&rel=0&showinfo=0&fs=0&endscreen=0`}
       title={title}
       frameborder="0"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

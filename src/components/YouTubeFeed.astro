@@ -315,7 +315,8 @@ const sortedVideos = allVideos
                 title={video.title}
                 useCustomPlayer={useCustomPlayer}
                 controls={true}
-                mute={false}
+                mute={true}
+                autoplay={false}
               />
             </div>
           </div>
@@ -340,7 +341,74 @@ const sortedVideos = allVideos
 )}
 
 <script>
-// This component reuses the same video handling logic from PostPreview
-// The video-container, video-thumbnail, play-button, and youtube-embed classes
-// ensure compatibility with the existing video management system
+// Video management for YouTubeFeed component
+// This ensures only one video plays at a time and handles play/pause functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Function to stop a video by replacing its src or destroying the player
+  function stopVideo(container: Element) {
+    const embedContainer = container.querySelector('.youtube-embed') as HTMLElement;
+    const iframe = embedContainer?.querySelector('iframe') as HTMLIFrameElement;
+    const customPlayer = embedContainer?.querySelector('[id^="youtube-player-"]') as HTMLElement;
+    
+    if (iframe) {
+      // Store original src if not already stored
+      if (iframe.src !== 'about:blank') {
+        iframe.dataset.originalSrc = iframe.src;
+      }
+      // Set to blank to stop video
+      iframe.src = 'about:blank';
+    }
+    
+    if (customPlayer && (window as any).YT && (window as any).YT.get) {
+      // For YouTube API players
+      const playerId = customPlayer.id;
+      const player = (window as any).YT.get(playerId);
+      if (player && player.pauseVideo) {
+        player.pauseVideo();
+      }
+    }
+  }
+  
+  document.querySelectorAll('.youtube-video-container').forEach(container => {
+    const playButton = container.querySelector('.play-button') as HTMLElement;
+    const thumbnail = container.querySelector('.youtube-thumbnail') as HTMLElement;
+    const embedContainer = container.querySelector('.youtube-embed') as HTMLElement;
+    
+    if (playButton && thumbnail && embedContainer) {
+      const clickHandler = () => {
+        // Stop all other videos first
+        document.querySelectorAll('.youtube-video-container').forEach(otherContainer => {
+          if (otherContainer !== container) {
+            const otherEmbed = otherContainer.querySelector('.youtube-embed') as HTMLElement;
+            const otherThumbnail = otherContainer.querySelector('.youtube-thumbnail') as HTMLElement;
+            const otherPlayButton = otherContainer.querySelector('.play-button') as HTMLElement;
+            
+            if (otherEmbed && otherThumbnail && otherPlayButton) {
+              // Actually stop the video
+              stopVideo(otherContainer);
+              // Hide the embed and show thumbnail
+              otherEmbed.style.display = 'none';
+              otherThumbnail.style.display = 'block';
+              otherPlayButton.style.display = 'flex';
+            }
+          }
+        });
+        
+        // Play this video
+        thumbnail.style.display = 'none';
+        playButton.style.display = 'none';
+        embedContainer.style.display = 'block';
+        
+        // If this is an iframe video that was stopped, restore its original src
+        const iframe = embedContainer.querySelector('iframe') as HTMLIFrameElement;
+        if (iframe && iframe.src === 'about:blank' && iframe.dataset.originalSrc) {
+          iframe.src = iframe.dataset.originalSrc;
+        }
+      };
+      
+      playButton.addEventListener('click', clickHandler);
+      thumbnail.addEventListener('click', clickHandler);
+    }
+  });
+});
 </script>
