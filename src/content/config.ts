@@ -335,6 +335,19 @@ export const collections = {
       showTransition: z.boolean().optional()
     })
   }),
+
+  youtubeFeeds: defineCollection({
+    type: 'data',
+    schema: z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      channelIds: z.array(z.string()),
+      maxVideos: z.number().min(1).max(50).default(6),
+      showTitles: z.boolean().default(true),
+      useCustomPlayer: z.boolean().default(false),
+      defaultView: z.enum(['grid', 'swipe']).default('grid')
+    })
+  }),
 };
 
   // ctas: defineCollection({

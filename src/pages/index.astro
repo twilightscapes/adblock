@@ -141,6 +141,37 @@ if (selectedPitchSlug3) {
 // Change this line from ShowMore = homepage?.showMore to:
 const ShowMore = homeData.showMore ?? false;
 
+// ====== YOUTUBE FEED DATA LOADING ======
+interface YouTubeFeedData {
+  slug: string;
+  title: string;
+  description?: string;
+  channelIds: string[];
+  maxVideos: number;
+  showTitles: boolean;
+  useCustomPlayer: boolean;
+  defaultView: 'grid' | 'swipe';
+}
+
+const selectedYoutubeFeedSlug = homepageData?.youtubeFeedSection;
+let selectedYoutubeFeed: YouTubeFeedData | undefined;
+
+if (selectedYoutubeFeedSlug) {
+  const feedData = await reader.collections.youtubeFeeds.read(selectedYoutubeFeedSlug);
+  if (feedData) {
+    selectedYoutubeFeed = {
+      slug: selectedYoutubeFeedSlug,
+      title: feedData.title ?? 'YouTube Videos',
+      description: feedData.description ?? undefined,
+      channelIds: feedData.channelIds ?? [],
+      maxVideos: feedData.maxVideos ?? 6,
+      showTitles: feedData.showTitles ?? true,
+      useCustomPlayer: feedData.useCustomPlayer ?? false,
+      defaultView: feedData.defaultView ?? 'grid'
+    };
+  }
+}
+
 
 
 
@@ -173,6 +204,13 @@ const sections: Section[] = (homeData.sectionOrdering || []).map((sectionName: s
       return { name: 'testimonials', show: true, order: index, component: Testimonials };
     case 'resume':
       return { name: 'resume', show: true, order: index, component: Resume };
+    case 'youtubefeed':
+      return {
+        name: 'youtubefeed',
+        show: !!selectedYoutubeFeed,
+        order: index,
+        component: YouTubeFeed
+      };
     case 'infoblock1':
       return {
         name: 'infoblock',
@@ -303,6 +341,26 @@ flex-direction: column;
 								leftColumnItems={resumeSettings?.data?.leftColumnItems || []}
 								rightColumnItems={resumeSettings?.data?.rightColumnItems || []}
 							/>;
+						case 'youtubefeed':
+							return selectedYoutubeFeed && (
+								<div>
+									{selectedYoutubeFeed.description && (
+										<div style="text-align: center; margin-bottom: 2rem;">
+											<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+												{selectedYoutubeFeed.description}
+											</p>
+										</div>
+									)}
+									<YouTubeFeed 
+										channelIds={selectedYoutubeFeed.channelIds}
+										maxVideos={selectedYoutubeFeed.maxVideos}
+										title={selectedYoutubeFeed.title}
+										showTitles={selectedYoutubeFeed.showTitles}
+										useCustomPlayer={selectedYoutubeFeed.useCustomPlayer}
+										defaultView={selectedYoutubeFeed.defaultView}
+									/>
+								</div>
+							);
               case 'posts':
 							return (
 								<>
@@ -344,26 +402,6 @@ flex-direction: column;
 			</section>
 		))}
     
-
-<YouTubeFeed 
-  channelIds={["UCBJycsmduvYEL83R_U4JriQ"]}
-  maxVideos={6}
-  title="Latest YouTube Videos"
-  defaultView={defaultView}  
-/>
-
-<YouTubeFeed 
-  channelIds={[
-    "UCjjBjVc0b1cIpNGEeZtS2lg", // Tucker Carlson
-    "UCsooa4yRKGN_zEE8iknghZA", // TED-Ed
-    "UCBJycsmduvYEL83R_U4JriQ", // Marques Brownlee
-    "UC6nSFpj9HTCZ5t-N3Rm3-HA"  // Vsauce
-  ]}
-  maxVideos={24}
-  title="Trending Content"
-  defaultView={defaultView}
-/>
-
 
     {homeCTA && (      <section style="display:grid; place-content:center; padding:10vh 0">
       <CTAs 

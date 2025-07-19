@@ -1,0 +1,8 @@
+title: Latest YouTube Videos  
+description: Recent uploads from featured creators
+channelIds:
+  - UCBJycsmduvYEL83R_U4JriQ  # Marques Brownlee
+maxVideos: 6
+showTitles: true
+useCustomPlayer: false
+defaultView: grid

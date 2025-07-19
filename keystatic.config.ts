@@ -164,6 +164,62 @@ export default config({
     }),
     
     
+    youtubeFeeds: collection({
+      label: 'YouTube Feed Sections',
+      path: 'src/content/youtubeFeeds/*',
+      schema: {
+        title: fields.text({ 
+          label: 'Section Title',
+          description: 'The title displayed above the video grid'
+        }),
+        description: fields.text({ 
+          label: 'Section Description',
+          description: 'Optional description text below the title',
+          multiline: true,
+          validation: { isRequired: false }
+        }),
+        channelIds: fields.array(
+          fields.text({ 
+            label: 'YouTube Channel ID',
+            description: 'Enter YouTube channel ID (e.g., UCBJycsmduvYEL83R_U4JriQ)'
+          }),
+          {
+            label: 'YouTube Channels',
+            description: 'Add YouTube channel IDs to include in this feed',
+            itemLabel: (props) => props.value || 'New Channel'
+          }
+        ),
+        maxVideos: fields.number({ 
+          label: 'Maximum Videos',
+          description: 'Number of videos to display (default: 6)',
+          defaultValue: 6,
+          validation: { min: 1, max: 50 }
+        }),
+        showTitles: fields.checkbox({ 
+          label: 'Show Video Titles',
+          description: 'Display video titles and channel info below thumbnails',
+          defaultValue: true
+        }),
+        useCustomPlayer: fields.checkbox({ 
+          label: 'Use Custom Player',
+          description: 'Use custom video controls instead of YouTube iframe',
+          defaultValue: false
+        }),
+        defaultView: fields.select({
+          label: 'Display Style',
+          description: 'How to display the videos',
+          options: [
+            { label: 'Grid Layout', value: 'grid' },
+            { label: 'Horizontal Scroll', value: 'swipe' }
+          ],
+          defaultValue: 'grid'
+        })
+      },
+      slugField: 'title'
+    }),
+
+
+    
     
 
 
@@ -455,6 +511,7 @@ export default config({
               { label: 'Feature Section', value: 'feature' },
               { label: 'Bio Section', value: 'bio' },
               { label: 'YouTube Form Section', value: 'youform' },
+              { label: 'YouTube Feed Section', value: 'youtubefeed' },
               { label: 'Map/Video Section', value: 'app' },
               { label: 'Gallery Section', value: 'gallery' },
               { label: 'Posts Section', value: 'posts' },
@@ -550,6 +607,15 @@ export default config({
         pitch3: fields.relationship({
           label: 'Content Module 3',
           collection: 'pitches',
+        }),
+
+        divider4: fields.empty(),
+
+        youtubeFeedSection: fields.relationship({
+          label: 'YouTube Feed Section',
+          description: 'Select a YouTube feed configuration for the homepage section',
+          collection: 'youtubeFeeds',
+          validation: { isRequired: false }
         }),
 
         
@@ -928,6 +994,7 @@ ui: {
       'bio',
       'faqs',
       'testimonials',
+      'youtubeFeeds',
       'pitches',
       'CTAs',
       'resume',

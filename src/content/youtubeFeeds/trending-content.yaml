@@ -1,0 +1,10 @@
+description: Latest videos from popular tech and educational channels
+channelIds:
+  - UCjjBjVc0b1cIpNGEeZtS2lg
+  - UCsooa4yRKGN_zEE8iknghZA
+  - UCBJycsmduvYEL83R_U4JriQ
+  - UC6nSFpj9HTCZ5t-N3Rm3-HA
+maxVideos: 24
+showTitles: true
+useCustomPlayer: false
+defaultView: grid
