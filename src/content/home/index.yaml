@@ -1,7 +1,10 @@
 sectionOrdering:
   - youform
-  - youtubefeed
-  - youtubefeed
+youtubeFeedSections:
+  - feedConfig: trending-content
+    customTitle: Fuck yea
+  - feedConfig: latest-videos
+    customTitle: Latest Tech Videos
 featureImage:
   alt: Paste YouTube Url Here
 youtube:
@@ -10,7 +13,6 @@ showMore: true
 pitch: How It Works
 pitch2: Social Media That YOU Control
 pitch3: Life's too short to watch ads!
-youtubeFeedSection: trending-content
 youformTitle: Life's too short to watch ads!
 youformDescription: Paste any YouTube URL to remove ads and get enhanced controls
 youformPlaceholder: Paste YouTube URL here...

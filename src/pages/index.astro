@@ -153,24 +153,46 @@ interface YouTubeFeedData {
   defaultView: 'grid' | 'swipe';
 }
 
-const selectedYoutubeFeedSlug = homepageData?.youtubeFeedSection;
-let selectedYoutubeFeed: YouTubeFeedData | undefined;
-
-if (selectedYoutubeFeedSlug) {
-  const feedData = await reader.collections.youtubeFeeds.read(selectedYoutubeFeedSlug);
-  if (feedData) {
-    selectedYoutubeFeed = {
-      slug: selectedYoutubeFeedSlug,
-      title: feedData.title ?? 'YouTube Videos',
-      description: feedData.description ?? undefined,
-      channelIds: feedData.channelIds ?? [],
-      maxVideos: feedData.maxVideos ?? 6,
-      showTitles: feedData.showTitles ?? true,
-      useCustomPlayer: feedData.useCustomPlayer ?? false,
-      defaultView: feedData.defaultView ?? 'grid'
-    };
-  }
+// Helper function to load YouTube feed data
+async function loadYoutubeFeed(slug: string | undefined): Promise<YouTubeFeedData | undefined> {
+  if (!slug) return undefined;
+  const feedData = await reader.collections.youtubeFeeds.read(slug);
+  if (!feedData) return undefined;
+  
+  return {
+    slug,
+    title: feedData.title ?? 'YouTube Videos',
+    description: feedData.description ?? undefined,
+    channelIds: feedData.channelIds ?? [],
+    maxVideos: feedData.maxVideos ?? 6,
+    showTitles: feedData.showTitles ?? true,
+    useCustomPlayer: feedData.useCustomPlayer ?? false,
+    defaultView: feedData.defaultView ?? 'grid'
+  };
 }
+
+// Load dynamic YouTube feed sections
+const youtubeFeedSections = await Promise.all(
+  (homepageData?.youtubeFeedSections || []).map(async (section, index) => {
+    if (!section.feedConfig) return null;
+    
+    const feedData = await loadYoutubeFeed(section.feedConfig);
+    if (!feedData) return null;
+    
+    return {
+      ...feedData,
+      customTitle: section.customTitle,
+      displayTitle: section.customTitle || feedData.title,
+      sectionIndex: index
+    };
+  })
+);
+
+// Filter out null entries
+const validYoutubeFeedSections = youtubeFeedSections.filter(Boolean);
+
+// Legacy support for old single feed section
+const legacyYoutubeFeed = await loadYoutubeFeed(homepageData?.youtubeFeedSection);
 
 
 
@@ -182,6 +204,7 @@ type Section = {
   show: boolean;
   order: number;
   component: any;
+  data?: YouTubeFeedData;
 };
 
 const sections: Section[] = (homeData.sectionOrdering || []).map((sectionName: string, index: number) => {
@@ -207,9 +230,10 @@ const sections: Section[] = (homeData.sectionOrdering || []).map((sectionName: s
     case 'youtubefeed':
       return {
         name: 'youtubefeed',
-        show: !!selectedYoutubeFeed,
+        show: !!legacyYoutubeFeed,
         order: index,
-        component: YouTubeFeed
+        component: YouTubeFeed,
+        data: legacyYoutubeFeed
       };
     case 'infoblock1':
       return {
@@ -342,22 +366,26 @@ flex-direction: column;
 								rightColumnItems={resumeSettings?.data?.rightColumnItems || []}
 							/>;
 						case 'youtubefeed':
-							return selectedYoutubeFeed && (
+						case 'youtubefeed1':
+						case 'youtubefeed2':
+						case 'youtubefeed3':
+							const feedData = section.data;
+							return feedData && (
 								<div>
-									{selectedYoutubeFeed.description && (
+									{feedData.description && (
 										<div style="text-align: center; margin-bottom: 2rem;">
 											<p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
-												{selectedYoutubeFeed.description}
+												{feedData.description}
 											</p>
 										</div>
 									)}
 									<YouTubeFeed 
-										channelIds={selectedYoutubeFeed.channelIds}
-										maxVideos={selectedYoutubeFeed.maxVideos}
-										title={selectedYoutubeFeed.title}
-										showTitles={selectedYoutubeFeed.showTitles}
-										useCustomPlayer={selectedYoutubeFeed.useCustomPlayer}
-										defaultView={selectedYoutubeFeed.defaultView}
+										channelIds={feedData.channelIds}
+										maxVideos={feedData.maxVideos}
+										title={feedData.title}
+										showTitles={feedData.showTitles}
+										useCustomPlayer={feedData.useCustomPlayer}
+										defaultView={feedData.defaultView}
 									/>
 								</div>
 							);
@@ -414,14 +442,28 @@ flex-direction: column;
     </section>
   )}
 
-
-
-
-
-
-
-
-
+  <!-- Dynamic YouTube Feed Sections -->
+  {validYoutubeFeedSections.map(feedSection => (
+    <section>
+      <div>
+        {feedSection.description && (
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <p style="font-size: 1.2rem; color: var(--theme-text); opacity: 0.8; max-width: 800px; margin: 0 auto;">
+              {feedSection.description}
+            </p>
+          </div>
+        )}
+        <YouTubeFeed 
+          channelIds={feedSection.channelIds}
+          maxVideos={feedSection.maxVideos}
+          title={feedSection.displayTitle}
+          showTitles={feedSection.showTitles}
+          useCustomPlayer={feedSection.useCustomPlayer}
+          defaultView={feedSection.defaultView}
+        />
+      </div>
+    </section>
+  ))}
 
 	</div>
 </PageLayout>

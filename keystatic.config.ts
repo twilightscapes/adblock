@@ -511,7 +511,6 @@ export default config({
               { label: 'Feature Section', value: 'feature' },
               { label: 'Bio Section', value: 'bio' },
               { label: 'YouTube Form Section', value: 'youform' },
-              { label: 'YouTube Feed Section', value: 'youtubefeed' },
               { label: 'Map/Video Section', value: 'app' },
               { label: 'Gallery Section', value: 'gallery' },
               { label: 'Posts Section', value: 'posts' },
@@ -528,6 +527,30 @@ export default config({
             label: 'Home Page Sections',
             description: 'Drag to reorder sections - position in list determines display order on the page',
             itemLabel: (props) => props.value,
+          }
+        ),
+
+        // YouTube Feed Sections - Dynamic array of feed sections
+        youtubeFeedSections: fields.array(
+          fields.object({
+            feedConfig: fields.relationship({
+              label: 'YouTube Feed Configuration',
+              description: 'Select which YouTube feed to display',
+              collection: 'youtubeFeeds'
+            }),
+            customTitle: fields.text({
+              label: 'Custom Section Title (Optional)',
+              description: 'Override the feed title for this section. Leave blank to use the feed title.',
+              validation: { isRequired: false }
+            })
+          }),
+          {
+            label: 'YouTube Feed Sections',
+            description: 'Add YouTube feed sections to your homepage. Each section can use a different feed configuration.',
+            itemLabel: (props) => {
+              const feedTitle = props.fields.customTitle.value || 'YouTube Feed Section';
+              return feedTitle;
+            }
           }
         ),
 
@@ -611,19 +634,6 @@ export default config({
 
         divider4: fields.empty(),
 
-        youtubeFeedSection: fields.relationship({
-          label: 'YouTube Feed Section',
-          description: 'Select a YouTube feed configuration for the homepage section',
-          collection: 'youtubeFeeds',
-          validation: { isRequired: false }
-        }),
-
-        
-
-
-        
-
-        
         divider5: fields.empty(),
         
         // ====== YOUTUBE FORM SECTION SETTINGS ======

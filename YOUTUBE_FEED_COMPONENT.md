@@ -71,32 +71,45 @@ Some popular channel IDs:
 
 ## Adding to Homepage
 
-To add the YouTubeFeed to your homepage, you can either:
+The YouTube feed system now uses a dynamic configuration through Keystatic CMS. This allows you to add unlimited YouTube feed sections with their own custom titles and configurations.
 
-### Option 1: Add to existing section ordering in Keystatic
+### Using Keystatic CMS (Recommended)
 
-1. Edit your `keystatic.config.ts` to add a YouTube feed option
-2. Add it to your home page sections
+1. **Create YouTube Feed Configurations**:
+   - Go to Keystatic Admin → Content Modules → YouTube Feed Sections
+   - Create new feed configurations with titles like "Trending Content", "Educational Videos", etc.
+   - Add channel IDs, set video limits, and configure display options
 
-### Option 2: Direct integration in index.astro
+2. **Add to Homepage**:
+   - Go to Keystatic Admin → Site Pages → Home Page
+   - Scroll to "YouTube Feed Sections"
+   - Click "Add YouTube Feed Section"
+   - Select your feed configuration from the dropdown
+   - Optionally add a custom title to override the feed's title
+   - Save and the section will appear on your homepage
 
-```astro
----
-import YouTubeFeed from '@/components/YouTubeFeed.astro';
-// ... other imports
----
+### Benefits of the New System
 
-<!-- Add anywhere in your homepage -->
-<YouTubeFeed 
-  channelIds={[
-    "UCBJycsmduvYEL83R_U4JriQ", // Tech
-    "UC6nSFpj9HTCZ5t-N3Rm3-HA", // Science
-    "UCsooa4yRKGN_zEE8iknghZA"  // Education
-  ]}
-  maxVideos={8}
-  title="Trending Videos"
-/>
+- **Unlimited Sections**: Add as many YouTube feed sections as you want
+- **Custom Titles**: Override feed titles for specific homepage sections
+- **Easy Management**: All managed through Keystatic CMS interface
+- **No Code Changes**: Add/remove sections without touching code
+
+### Example Configuration
+
+In Keystatic, your homepage YouTube Feed Sections might look like:
+
+```yaml
+youtubeFeedSections:
+  - feedConfig: trending-content        # Uses "Trending Content" title
+    customTitle: ''                     # No override
+  - feedConfig: latest-videos          # Uses "Latest YouTube Videos" title  
+    customTitle: 'Latest Tech Videos'   # Override with custom title
+  - feedConfig: educational-content     # Uses "Educational Content" title
+    customTitle: ''                     # No override
 ```
+
+This gives you complete flexibility to organize your homepage exactly how you want it!
 
 ## Integration with Existing Video System
 
